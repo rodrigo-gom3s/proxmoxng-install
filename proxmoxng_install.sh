@@ -59,12 +59,9 @@ fi
 apt update -y 2>/dev/null
 apt upgrade -y 2>/dev/null
 if [ $? -ne 0 ]; then
-    dpkg --configure -a >/dev/null 2>/dev/null
-    if [ $? -ne 0 ]; then
-        echo "[ERROR] - Failed to update system, make sure you have root privileges and access to internet"
-        echo ""
-        exit 1
-    fi
+    echo "[ERROR] - Failed to update system, try running 'dpkg --configure -a', if it persists make sure you have root privileges and access to internet, if it persists."
+    echo ""
+    exit 1
 fi
 
 apt-get install -y git python3 python3-venv build-essential git-email debhelper pve-doc-generator libpod-parser-perl libtest-mockmodule-perl lintian pve-eslint sq 2>/dev/null
@@ -418,3 +415,5 @@ echo ""
 echo "[--------------------------------------------------------------------------------]"
 echo ""
 exit 0
+
+domain.tld
