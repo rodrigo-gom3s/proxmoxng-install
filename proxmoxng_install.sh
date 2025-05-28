@@ -34,6 +34,7 @@ case "$TESTE" in
         exit 1
     fi
     echo "[SETUP] - ProxmoxNG - Updating ProxmoxNG service ..."
+    echo ""
     systemctl restart proxmoxng.service > /dev/null 2>/dev/null
     if [ $? -ne 0 ]; then
         echo "[ERROR] - Failed to restart ProxmoxNG service, make sure you have root privileges and that you already have the ProxmoxNG installed."
@@ -229,6 +230,24 @@ do
     fi
 done
 
+DNS_ENTRY=$(whiptail --inputbox "Please insert a FQDN for the middleware (it has to be an authorized one):" --title "Set Middleware FQDN" 10 60  3>&1 1>&2 2>&3)
+
+if [ $? -ne 0 ]; then
+    echo "[ERROR] - You must set a valid FQDN."
+    echo ""
+    exit 1
+fi
+
+if [[ -z "$DNS_ENTRY" || ! "$DNS_ENTRY" =~ ^([a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$ ]]; then
+    echo "[ERROR] - You must set a valid FQDN"
+    echo ""
+    exit 1
+fi
+
+sed -i "s|pveha\.duckdns\.org|$DNS_ENTRY|g" /etc/proxmoxng/interface/pve-manager/www/manager6/window/NHACreateJSON.js
+sed -i "s|pveha\.duckdns\.org|$DNS_ENTRY|g" /etc/proxmoxng/interface/pve-manager/www/manager6/window/NHAExternalMigration.js
+sed -i "s|pveha\.duckdns\.org|$DNS_ENTRY|g" /etc/proxmoxng/interface/pve-manager/www/manager6/window/NHAFaultTolerance.js
+
 
 CERT_PATH=$(whiptail --inputbox "Please insert the certificate filepath for the middleware's DNS entry:" --title "Set Certificate Filepath" 10 60  3>&1 1>&2 2>&3)
 
@@ -379,6 +398,8 @@ if [ $? -ne 0 ]; then
         exit 1
     fi
 fi
+
+sed 
 
 echo "[INSTALL - STEP 3] - ProxmoxNG - Compiling ProxmoxNG ..."
 echo ""
