@@ -189,17 +189,17 @@ if [[ $PUSHOVER_USER =~ ^[a-zA-Z0-9]{1,30}$ ]]; then
             exit 1
         fi
 echo "[database]
-uri="db.sqlite"
+uri=\"db.sqlite\"
 
 [proxmox]
-ip="127.0.0.1"
-port="8006"
-user="$USER"
-password="$PASSWORD"
+ip=\"127.0.0.1\"
+port=\"8006\"
+user=\"$USER\"
+password=\"$PASSWORD\"
 
 [pushover]
-token="$PUSHOVER_TOKEN"
-user="$PUSHOVER_USER"" > /etc/proxmoxng/middleware/config.toml
+token=\"$PUSHOVER_TOKEN\"
+user=\"$PUSHOVER_USER\"" > /etc/proxmoxng/middleware/config.toml
 
 if [ $? -ne 0 ]; then
     echo "[ERROR] - Failed to create /etc/proxmoxng/middleware/config.toml file, make sure you have root privileges."
@@ -211,17 +211,17 @@ fi
 
 if [[ ! $PUSHOVER_USER =~ ^[a-zA-Z0-9]{1,30}$ ]]; then
 echo "[database]
-uri="db.sqlite"
+uri=\"db.sqlite\"
 
 [proxmox]
-ip="127.0.0.1"
-port="8006"
-user="$USER"
-password="$PASSWORD"
+ip=\"127.0.0.1\"
+port=\"8006\"
+user=\"$USER\"
+password=\"$PASSWORD\"
 
 [pushover]
-token="asqdt2kusb9vckaueaa2nwmzerao72"
-user="uu87unabgbobzztxwpez34vvnoqcxx"" > /etc/proxmoxng/middleware/config.toml
+token=\"asqdt2kusb9vckaueaa2nwmzerao72\"
+user=\"uu87unabgbobzztxwpez34vvnoqcxx\"" > /etc/proxmoxng/middleware/config.toml
 if [ $? -ne 0 ]; then
     echo "[ERROR] - Failed to create /etc/proxmoxng/middleware/config.toml file, make sure you have root privileges."
     echo ""
@@ -238,7 +238,7 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-pip install proxmoxng  2>/dev/null
+pip install -i https://test.pypi.org/simple/ --no-deps proxmoxng  2>/dev/null
 if [ $? -ne 0 ]; then
     echo "[ERROR] - Failed to install ProxmoxNG middleware, make sure you have root privileges and access to internet."
     echo ""
@@ -261,17 +261,12 @@ fi
 
 echo "[INSTALL - STEP 3] - ProxmoxNG - Compiling ProxmoxNG ..."
 echo ""
-cd /etc/proxmoxng/interface/pve-manager && make > /dev/null 2>/dev/null
-if [ $? -ne 0 ]; then
-    echo ""
-    echo "[ERROR] - Failed to compile ProxmoxNG, make sure you have root privileges."
-    echo ""
-    exit 1
-fi
+cd /etc/proxmoxng/interface/pve-manager && make	> /dev/null 2>/dev/null
+
 
 cd /etc/proxmoxng/interface/pve-manager/www && make install > /dev/null 2>/dev/null
 if [ $? -ne 0 ]; then
-    echo "[ERROR] - Failed to compile ProxmoxNG, make sure you have root privileges."
+    echo "[ERROR] - Failed to compile ProxmoxNG WWW, make sure you have root privileges."
     echo ""
     exit 1
 fi
