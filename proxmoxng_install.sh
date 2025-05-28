@@ -2,9 +2,9 @@ echo ""
 echo "[----------------------- PROXMOXNG INSTALLER -----------------------]"
 echo ""
 TESTE=$(whiptail --title "ProxmoxNG Installer" --menu "Choose an option" 25 78 16 \
-"1)" "Make a full installation of the ProxmoxNG" \
-"2)" "Update the Middleware software" \
-3>&1 1>&2 2>&3)
+    "1)" "Make a full installation of the ProxmoxNG" \
+    "2)" "Update the Middleware software" \
+    3>&1 1>&2 2>&3)
 
 if [ $? -ne 0 ]; then
     echo "Cancelled."
@@ -12,21 +12,21 @@ if [ $? -ne 0 ]; then
 fi
 
 case "$TESTE" in
-  "1)")
+"1)")
     echo "[INSTALLING] - ProxmoxNG - Starting full installation ..."
     ;;
-  "2)")
+"2)")
     echo "[UPDATING] - ProxmoxNG - Starting update of the Middleware software ..."
     echo ""
     echo "[INSTALL] - ProxmoxNG - Updating ProxmoxNG middleware ..."
     echo ""
-    source /usr/share/proxmoxng/.venv/bin/activate > /dev/null 2>/dev/null
+    source /usr/share/proxmoxng/.venv/bin/activate >/dev/null 2>/dev/null
     if [ $? -ne 0 ]; then
         echo "[ERROR] - Failed to activate ProxmoxNG's python virtual enviroment, make sure you have root privileges and that you already have the ProxmoxNG installed."
         echo ""
         exit 1
     fi
-    pip install -i https://test.pypi.org/simple/ --upgrade --no-deps proxmoxng  2>/dev/null
+    pip install -i https://test.pypi.org/simple/ --upgrade --no-deps proxmoxng 2>/dev/null
     echo ""
     if [ $? -ne 0 ]; then
         echo "[ERROR] - Failed to update ProxmoxNG middleware, make sure you have root privileges and access to internet."
@@ -34,7 +34,7 @@ case "$TESTE" in
         exit 1
     fi
     echo "[SETUP] - ProxmoxNG - Updating ProxmoxNG service ..."
-    systemctl restart proxmoxng.service > /dev/null 2>/dev/null
+    systemctl restart proxmoxng.service >/dev/null 2>/dev/null
     if [ $? -ne 0 ]; then
         echo "[ERROR] - Failed to restart ProxmoxNG service, make sure you have root privileges and that you already have the ProxmoxNG installed."
         echo ""
@@ -47,7 +47,7 @@ esac
 
 echo "[SETUP - STEP 1] - ProxmoxNG - Updating system and installing ProxmoxNG dependencies ..."
 echo ""
-echo "deb http://download.proxmox.com/debian bookworm pvetest" > /etc/apt/sources.list.d/pve-development.list 2>/dev/null
+echo "deb http://download.proxmox.com/debian bookworm pvetest" >/etc/apt/sources.list.d/pve-development.list 2>/dev/null
 
 if [ $? -ne 0 ]; then
     echo "[ERROR] - Failed to add PVE utilities repository, make sure you have root privileges."
@@ -73,9 +73,9 @@ echo ""
 echo "[SETUP - STEP 2] - ProxmoxNG - Setting up ProxmoxNG directories ..."
 echo ""
 
-mkdir /etc/proxmoxng > /dev/null 2>/dev/null
+mkdir /etc/proxmoxng >/dev/null 2>/dev/null
 if [ $? -ne 0 ]; then
-    ls /etc/proxmoxng > /dev/null 2>/dev/null
+    ls /etc/proxmoxng >/dev/null 2>/dev/null
     if [ $? -ne 0 ]; then
         echo "[ERROR] - Failed to create /etc/proxmoxng directory, make sure you have root privileges."
         echo ""
@@ -83,9 +83,9 @@ if [ $? -ne 0 ]; then
     fi
 fi
 
-mkdir /etc/proxmoxng/middleware > /dev/null 2>/dev/null
+mkdir /etc/proxmoxng/middleware >/dev/null 2>/dev/null
 if [ $? -ne 0 ]; then
-    ls /etc/proxmoxng/middleware > /dev/null 2>/dev/null
+    ls /etc/proxmoxng/middleware >/dev/null 2>/dev/null
     if [ $? -ne 0 ]; then
         echo "[ERROR] - Failed to create /etc/proxmoxng/middleware directory, make sure you have root privileges."
         echo ""
@@ -93,9 +93,9 @@ if [ $? -ne 0 ]; then
     fi
 fi
 
-mkdir /usr/share/proxmoxng > /dev/null 2>/dev/null
+mkdir /usr/share/proxmoxng >/dev/null 2>/dev/null
 if [ $? -ne 0 ]; then
-    ls /usr/share/proxmoxng > /dev/null 2>/dev/null
+    ls /usr/share/proxmoxng >/dev/null 2>/dev/null
     if [ $? -ne 0 ]; then
         echo "[ERROR] - Failed to create /usr/share/proxmoxng directory, make sure you have root privileges."
         echo ""
@@ -106,11 +106,10 @@ fi
 python3 -m venv /usr/share/proxmoxng/.venv
 
 if [ $? -ne 0 ]; then
-        echo "[ERROR] - Failed to create ProxmoxNG's python virtual enviroment, make sure you have root privileges."
-        echo ""
-        exit 1
+    echo "[ERROR] - Failed to create ProxmoxNG's python virtual enviroment, make sure you have root privileges."
+    echo ""
+    exit 1
 fi
-
 
 echo "[SETUP - STEP 3] - ProxmoxNG - Setting up Keepalived ..."
 echo ""
@@ -131,9 +130,9 @@ if [ $? -ne 0 ]; then
 fi
 
 if [[ ! $IP =~ ^((25[0-5]|2[0-4][0-9]|1?[0-9]{1,2})\.){3}(25[0-5]|2[0-4][0-9]|1?[0-9]{1,2})$ ]]; then
-        echo "[ERROR] - You must insert a valid virtual IP."
-        echo ""
-        exit 1
+    echo "[ERROR] - You must insert a valid virtual IP."
+    echo ""
+    exit 1
 fi
 
 PRIORITY=$(whiptail --inputbox "Please enter the keepalived node priority:" 10 60 --title "Set Keepalived Node Priority" 3>&1 1>&2 2>&3)
@@ -145,9 +144,9 @@ if [ $? -ne 0 ]; then
 fi
 
 if [[ ! $PRIORITY =~ ^[0-9]{1,3}$ ]]; then
-        echo "[ERROR] - You must set a valid keepalived node priority for this node."
-        echo ""
-        exit 1
+    echo "[ERROR] - You must set a valid keepalived node priority for this node."
+    echo ""
+    exit 1
 fi
 
 echo "vrrp_instance VI_1
@@ -164,7 +163,7 @@ echo "vrrp_instance VI_1
 	virtual_ipaddress {
 		$IP
 	}
-}" > /etc/keepalived/keepalived.conf
+}" >/etc/keepalived/keepalived.conf
 
 echo ""
 echo "[SETUP - STEP 4] - ProxmoxNG - Setting up ProxmoxNG middleware ..."
@@ -198,8 +197,7 @@ if [ -z "$USER" ]; then
     exit 1
 fi
 
-while [ $PASSWORD != $CONFIRM_PASSWORD ] 
-do
+while [ $PASSWORD != $CONFIRM_PASSWORD ]; do
     PASSWORD=$(whiptail --passwordbox "Please enter the Proxmox user password:" 10 60 --title "Set Proxmox User Password" 3>&1 1>&2 2>&3)
 
     if [ $? -ne 0 ]; then
@@ -229,8 +227,7 @@ do
     fi
 done
 
-
-CERT_PATH=$(whiptail --inputbox "Please insert the certificate filepath for the middleware's DNS entry:" --title "Set Certificate Filepath" 10 60  3>&1 1>&2 2>&3)
+CERT_PATH=$(whiptail --inputbox "Please insert the certificate filepath for the middleware's DNS entry:" --title "Set Certificate Filepath" 10 60 3>&1 1>&2 2>&3)
 
 if [ $? -ne 0 ]; then
     echo "[ERROR] - You must set the certificate filepath."
@@ -244,7 +241,7 @@ if [ -z "$CERT_PATH" ]; then
     exit 1
 fi
 
-KEY_PATH=$(whiptail --inputbox "Please insert the key filepath for the certificate:" --title "Set Key Filepath" 10 60  3>&1 1>&2 2>&3)
+KEY_PATH=$(whiptail --inputbox "Please insert the key filepath for the certificate:" --title "Set Key Filepath" 10 60 3>&1 1>&2 2>&3)
 
 if [ $? -ne 0 ]; then
     echo "[ERROR] - You must set the key filepath."
@@ -258,7 +255,6 @@ if [ -z "$KEY_PATH" ]; then
     exit 1
 fi
 
-
 PUSHOVER_USER=$(whiptail --inputbox "Please enter the Pushover username:" 10 60 --title "Set Proxmox Username" 3>&1 1>&2 2>&3)
 
 if [ $? -ne 0 ]; then
@@ -268,19 +264,19 @@ if [ $? -ne 0 ]; then
 fi
 
 if [[ $PUSHOVER_USER =~ ^[a-zA-Z0-9]{1,30}$ ]]; then
-        PUSHOVER_TOKEN=$(whiptail --inputbox "Please enter the Pushover token:" 10 60 --title "Set Proxmox Token" 3>&1 1>&2 2>&3)
-        if [ $? -ne 0 ]; then
-            echo "[ERROR] - You must set the Pushover token."
-            echo ""
-            exit 1
-        fi
-        if [ -z "$PUSHOVER_TOKEN" ]; then
-            echo "[ERROR] - You must set the Proxmox token."
-            echo ""
-            exit 1
-        fi
+    PUSHOVER_TOKEN=$(whiptail --inputbox "Please enter the Pushover token:" 10 60 --title "Set Proxmox Token" 3>&1 1>&2 2>&3)
+    if [ $? -ne 0 ]; then
+        echo "[ERROR] - You must set the Pushover token."
+        echo ""
+        exit 1
+    fi
+    if [ -z "$PUSHOVER_TOKEN" ]; then
+        echo "[ERROR] - You must set the Proxmox token."
+        echo ""
+        exit 1
+    fi
 
-echo "[database]
+    echo "[database]
 uri=\""${DB%/}/db.sqlite"\"
 
 [proxmox]
@@ -296,19 +292,19 @@ ip=\"$IP\"
 token=\"$PUSHOVER_TOKEN\"
 user=\"$PUSHOVER_USER\"
 [cert]
-cert=\"/etc/proxmoxng/middleware/cert.pem\"
-key=\"/etc/proxmoxng/middleware/key.pem\"" > /etc/proxmoxng/middleware/config.toml
+cert=\"$CERT_PATH\"
+key=\"$KEY_PATH\"" >/etc/proxmoxng/middleware/config.toml
 
-if [ $? -ne 0 ]; then
-    echo "[ERROR] - Failed to create /etc/proxmoxng/middleware/config.toml file, make sure you have root privileges."
-    echo ""
-    exit 1
-fi
+    if [ $? -ne 0 ]; then
+        echo "[ERROR] - Failed to create /etc/proxmoxng/middleware/config.toml file, make sure you have root privileges."
+        echo ""
+        exit 1
+    fi
 
 fi
 
 if [[ ! $PUSHOVER_USER =~ ^[a-zA-Z0-9]{1,30}$ ]]; then
-echo "[database]
+    echo "[database]
 uri=\""${DB%/}/db.sqlite"\"
 
 [proxmox]
@@ -317,34 +313,34 @@ port=\"8006\"
 user=\"$USER\"
 password=\"$PASSWORD\"
 
+[keepalived]
+ip=\"$IP\"
 
 [cert]
-cert=\"/etc/proxmoxng/middleware/cert.pem\"
-key=\"/etc/proxmoxng/middleware/key.pem\"
-" > /etc/proxmoxng/middleware/config.toml
-if [ $? -ne 0 ]; then
-    echo "[ERROR] - Failed to create /etc/proxmoxng/middleware/config.toml file, make sure you have root privileges."
-    echo ""
-    exit 1
-fi
+cert=\"$CERT_PATH\"
+key=\"$KEY_PATH\"" >/etc/proxmoxng/middleware/config.toml
+    if [ $? -ne 0 ]; then
+        echo "[ERROR] - Failed to create /etc/proxmoxng/middleware/config.toml file, make sure you have root privileges."
+        echo ""
+        exit 1
+    fi
 fi
 
 echo "[INSTALL - STEP 1] - ProxmoxNG - Installing ProxmoxNG middleware ..."
 echo ""
-source /usr/share/proxmoxng/.venv/bin/activate > /dev/null 2>/dev/null
+source /usr/share/proxmoxng/.venv/bin/activate >/dev/null 2>/dev/null
 if [ $? -ne 0 ]; then
     echo "[ERROR] - Failed to activate ProxmoxNG's python virtual enviroment, make sure you have root privileges."
     echo ""
     exit 1
 fi
 
-pip install -i https://test.pypi.org/simple/ --no-deps proxmoxng  2>/dev/null
+pip install -i https://test.pypi.org/simple/ --no-deps proxmoxng 2>/dev/null
 if [ $? -ne 0 ]; then
     echo "[ERROR] - Failed to install ProxmoxNG middleware, make sure you have root privileges and access to internet."
     echo ""
     exit 1
 fi
-
 
 echo ""
 echo "[INSTALL - STEP 2] - ProxmoxNG - Creating Service Daemon ..."
@@ -362,17 +358,17 @@ Restart=always
 
 [Install]
 WantedBy=multi-user.target
-" > /etc/systemd/system/proxmoxng.service
+" >/etc/systemd/system/proxmoxng.service
 
 systemctl enable --now proxmoxng.service
 
 echo ""
 echo "[INSTALL - STEP 2] - ProxmoxNG - Downloading ProxmoxNG ..."
 echo ""
-mkdir /etc/proxmoxng/interface > /dev/null 2>/dev/null
-git clone https://github.com/rodrigo-gom3s/pve-manager.git /etc/proxmoxng/interface/pve-manager > /dev/null 2>/dev/null
+mkdir /etc/proxmoxng/interface >/dev/null 2>/dev/null
+git clone https://github.com/rodrigo-gom3s/pve-manager.git /etc/proxmoxng/interface/pve-manager >/dev/null 2>/dev/null
 if [ $? -ne 0 ]; then
-    ls /etc/proxmoxng/interface/pve-manager > /dev/null 2>/dev/null
+    ls /etc/proxmoxng/interface/pve-manager >/dev/null 2>/dev/null
     if [ $? -ne 0 ]; then
         echo "[ERROR] - Failed to create /etc/proxmoxng directory, make sure you have root privileges."
         echo ""
@@ -382,10 +378,9 @@ fi
 
 echo "[INSTALL - STEP 3] - ProxmoxNG - Compiling ProxmoxNG ..."
 echo ""
-cd /etc/proxmoxng/interface/pve-manager && make	> /dev/null 2>/dev/null
+cd /etc/proxmoxng/interface/pve-manager && make >/dev/null 2>/dev/null
 
-
-cd /etc/proxmoxng/interface/pve-manager/www && make install > /dev/null 2>/dev/null
+cd /etc/proxmoxng/interface/pve-manager/www && make install >/dev/null 2>/dev/null
 if [ $? -ne 0 ]; then
     echo "[ERROR] - Failed to compile ProxmoxNG WWW, make sure you have root privileges."
     echo ""
@@ -397,3 +392,5 @@ echo ""
 echo "[--------------------------------------------------------------------------------]"
 echo ""
 exit 0
+
+domain.tld
