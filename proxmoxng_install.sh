@@ -60,6 +60,7 @@ apt update -y 2>/dev/null
 apt upgrade -y 2>/dev/null
 if [ $? -ne 0 ]; then
     dpkg --configure -a  2>/dev/null
+    echo ""
     if [ $? -ne 0 ]; then
         echo "[ERROR] - Failed to update system, make sure you have root privileges and access to internet"
         echo ""
