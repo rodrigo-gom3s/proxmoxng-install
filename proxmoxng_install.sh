@@ -294,7 +294,10 @@ ip=\"$IP\"
 
 [pushover]
 token=\"$PUSHOVER_TOKEN\"
-user=\"$PUSHOVER_USER\"" > /etc/proxmoxng/middleware/config.toml
+user=\"$PUSHOVER_USER\"
+[cert]
+cert=\"/etc/proxmoxng/middleware/cert.pem\"
+key=\"/etc/proxmoxng/middleware/key.pem\"" > /etc/proxmoxng/middleware/config.toml
 
 if [ $? -ne 0 ]; then
     echo "[ERROR] - Failed to create /etc/proxmoxng/middleware/config.toml file, make sure you have root privileges."
@@ -313,6 +316,11 @@ ip=\"127.0.0.1\"
 port=\"8006\"
 user=\"$USER\"
 password=\"$PASSWORD\"
+
+
+[cert]
+cert=\"/etc/proxmoxng/middleware/cert.pem\"
+key=\"/etc/proxmoxng/middleware/key.pem\"
 " > /etc/proxmoxng/middleware/config.toml
 if [ $? -ne 0 ]; then
     echo "[ERROR] - Failed to create /etc/proxmoxng/middleware/config.toml file, make sure you have root privileges."
