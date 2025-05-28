@@ -218,10 +218,7 @@ ip=\"127.0.0.1\"
 port=\"8006\"
 user=\"$USER\"
 password=\"$PASSWORD\"
-
-[pushover]
-token=\"asqdt2kusb9vckaueaa2nwmzerao72\"
-user=\"uu87unabgbobzztxwpez34vvnoqcxx\"" > /etc/proxmoxng/middleware/config.toml
+" > /etc/proxmoxng/middleware/config.toml
 if [ $? -ne 0 ]; then
     echo "[ERROR] - Failed to create /etc/proxmoxng/middleware/config.toml file, make sure you have root privileges."
     echo ""
