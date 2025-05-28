@@ -168,6 +168,20 @@ if [ -z "$PASSWORD" ]; then
     exit 1
 fi
 
+CONFIRM_PASSWORD=$(whiptail --passwordbox "Please confirm the Proxmox user password:" 10 60 --title "Confirm Proxmox User Password" 3>&1 1>&2 2>&3)
+
+if [ $? -ne 0 ] || [ -z "$CONFIRM_PASSWORD" ]; then
+    echo "[ERROR] - You must confirm the Proxmox password."
+    echo ""
+    exit 1
+fi
+
+if [ "$PASSWORD" != "$CONFIRM_PASSWORD" ]; then
+    echo "[ERROR] - The Proxmox user passwords do not match."
+    echo ""
+    exit 1
+fi
+
 PUSHOVER_USER=$(whiptail --inputbox "Please enter the Pushover username:" 10 60 --title "Set Proxmox Username" 3>&1 1>&2 2>&3)
 
 if [ $? -ne 0 ]; then
@@ -188,8 +202,9 @@ if [[ $PUSHOVER_USER =~ ^[a-zA-Z0-9]{1,30}$ ]]; then
             echo ""
             exit 1
         fi
+
 echo "[database]
-uri=\"db.sqlite\"
+uri=\""${DB%/}"\"
 
 [proxmox]
 ip=\"127.0.0.1\"
@@ -211,7 +226,7 @@ fi
 
 if [[ ! $PUSHOVER_USER =~ ^[a-zA-Z0-9]{1,30}$ ]]; then
 echo "[database]
-uri=\"db.sqlite\"
+uri=\""${DB%/}"\"
 
 [proxmox]
 ip=\"127.0.0.1\"
