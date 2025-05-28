@@ -242,6 +242,27 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
+
+echo ""
+echo "[INSTALL - STEP 2] - ProxmoxNG - Creating Service Daemon ..."
+echo ""
+echo "
+[Unit]
+Description=ProxmoxNG Middlware Daemon
+After=network.target
+
+[Service]
+User=root
+Group=root
+ExecStart=/usr/share/proxmoxng/.venv/bin/proxmoxng
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+" > /etc/systemd/system/proxmoxng.service
+
+systemctl enable --now proxmoxng.service
+
 echo ""
 echo "[INSTALL - STEP 2] - ProxmoxNG - Downloading ProxmoxNG ..."
 echo ""
