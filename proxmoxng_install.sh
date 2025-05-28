@@ -1,6 +1,50 @@
 echo ""
 echo "[----------------------- PROXMOXNG INSTALLER -----------------------]"
 echo ""
+TESTE=$(whiptail --title "ProxmoxNG Installer" --menu "Choose an option" 25 78 16 \
+"1)" "Make a full installation of the ProxmoxNG" \
+"2)" "Update the Middleware software" \
+3>&1 1>&2 2>&3)
+
+if [ $? -ne 0 ]; then
+    echo "Cancelled."
+    exit 1
+fi
+
+case "$TESTE" in
+  "1)")
+    echo "[INSTALLING] - ProxmoxNG - Starting full installation ..."
+    ;;
+  "2)")
+    echo "[UPDATING] - ProxmoxNG - Starting update of the Middleware software ..."
+    echo ""
+    echo "[INSTALL] - ProxmoxNG - Updating ProxmoxNG middleware ..."
+    echo ""
+    source /usr/share/proxmoxng/.venv/bin/activate > /dev/null 2>/dev/null
+    if [ $? -ne 0 ]; then
+        echo "[ERROR] - Failed to activate ProxmoxNG's python virtual enviroment, make sure you have root privileges and that you already have the ProxmoxNG installed."
+        echo ""
+        exit 1
+    fi
+    pip install -i https://test.pypi.org/simple/ --upgrade --no-deps proxmoxng  2>/dev/null
+    echo ""
+    if [ $? -ne 0 ]; then
+        echo "[ERROR] - Failed to update ProxmoxNG middleware, make sure you have root privileges and access to internet."
+        echo ""
+        exit 1
+    fi
+    echo "[SETUP] - ProxmoxNG - Updating ProxmoxNG service ..."
+    systemctl restart proxmoxng.service > /dev/null 2>/dev/null
+    if [ $? -ne 0 ]; then
+        echo "[ERROR] - Failed to restart ProxmoxNG service, make sure you have root privileges and that you already have the ProxmoxNG installed."
+        echo ""
+        exit 1
+    fi
+    echo "[FINISH] - ProxmoxNG - Update finished successfully."
+    exit 0
+    ;;
+esac
+
 echo "[SETUP - STEP 1] - ProxmoxNG - Updating system and installing ProxmoxNG dependencies ..."
 echo ""
 echo "deb http://download.proxmox.com/debian bookworm pvetest" > /etc/apt/sources.list.d/pve-development.list 2>/dev/null
@@ -13,7 +57,7 @@ fi
 
 apt-get update -y 2>/dev/null
 apt-get upgrade -y 2>/dev/null
-if [$? -ne 0 ]; then
+if [ $? -ne 0 ]; then
     echo "[ERROR] - Failed to update system, make sure you have root privileges and access to internet"
     echo ""
 fi
@@ -154,33 +198,66 @@ if [ -z "$USER" ]; then
     exit 1
 fi
 
-PASSWORD=$(whiptail --passwordbox "Please enter the Proxmox user password:" 10 60 --title "Set Proxmox User Password" 3>&1 1>&2 2>&3)
+while [ $PASSWORD != $CONFIRM_PASSWORD ] 
+do
+    PASSWORD=$(whiptail --passwordbox "Please enter the Proxmox user password:" 10 60 --title "Set Proxmox User Password" 3>&1 1>&2 2>&3)
+
+    if [ $? -ne 0 ]; then
+        echo "[ERROR] - You must set the Proxmox password."
+        echo ""
+        exit 1
+    fi
+
+    if [ -z "$PASSWORD" ]; then
+        echo "[ERROR] - You must set the Proxmox password."
+        echo ""
+        exit 1
+    fi
+
+    CONFIRM_PASSWORD=$(whiptail --passwordbox "Please confirm the Proxmox user password:" 10 60 --title "Confirm Proxmox User Password" 3>&1 1>&2 2>&3)
+
+    if [ $? -ne 0 ] || [ -z "$CONFIRM_PASSWORD" ]; then
+        echo "[ERROR] - You must confirm the Proxmox password."
+        echo ""
+        exit 1
+    fi
+
+    if [ "$PASSWORD" != "$CONFIRM_PASSWORD" ]; then
+        whiptail --title "Password validation failed" --infobox "The passwords do not match, please try again." 10 60
+        echo ""
+        exit 1
+    fi
+done
+
+
+CERT_PATH=$(whiptail --inputbox "Please insert the certificate filepath for the middleware's DNS entry:" --title "Set Certificate Filepath" 10 60  3>&1 1>&2 2>&3)
 
 if [ $? -ne 0 ]; then
-    echo "[ERROR] - You must set the Proxmox password."
+    echo "[ERROR] - You must set the certificate filepath."
     echo ""
     exit 1
 fi
 
-if [ -z "$PASSWORD" ]; then
-    echo "[ERROR] - You must set the Proxmox password."
+if [ -z "$CERT_PATH" ]; then
+    echo "[ERROR] - You must set the certificate filepath"
     echo ""
     exit 1
 fi
 
-CONFIRM_PASSWORD=$(whiptail --passwordbox "Please confirm the Proxmox user password:" 10 60 --title "Confirm Proxmox User Password" 3>&1 1>&2 2>&3)
+KEY_PATH=$(whiptail --inputbox "Please insert the key filepath for the certificate:" --title "Set Key Filepath" 10 60  3>&1 1>&2 2>&3)
 
-if [ $? -ne 0 ] || [ -z "$CONFIRM_PASSWORD" ]; then
-    echo "[ERROR] - You must confirm the Proxmox password."
+if [ $? -ne 0 ]; then
+    echo "[ERROR] - You must set the key filepath."
     echo ""
     exit 1
 fi
 
-if [ "$PASSWORD" != "$CONFIRM_PASSWORD" ]; then
-    echo "[ERROR] - The Proxmox user passwords do not match."
+if [ -z "$KEY_PATH" ]; then
+    echo "[ERROR] - You must set the key filepath"
     echo ""
     exit 1
 fi
+
 
 PUSHOVER_USER=$(whiptail --inputbox "Please enter the Pushover username:" 10 60 --title "Set Proxmox Username" 3>&1 1>&2 2>&3)
 
@@ -211,6 +288,9 @@ ip=\"127.0.0.1\"
 port=\"8006\"
 user=\"$USER\"
 password=\"$PASSWORD\"
+
+[keepalived]
+ip=\"$IP\"
 
 [pushover]
 token=\"$PUSHOVER_TOKEN\"
