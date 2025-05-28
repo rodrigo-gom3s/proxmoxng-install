@@ -269,7 +269,7 @@ After=network.target
 [Service]
 User=root
 Group=root
-ExecStart=/usr/share/proxmoxng/.venv/bin/proxmoxng
+ExecStart=/usr/share/proxmoxng/.venv/bin/proxmoxng --cert=/etc/proxmoxng/middleware/cert.pem --key=/etc/proxmoxng/middleware/key.pem
 Restart=always
 
 [Install]
