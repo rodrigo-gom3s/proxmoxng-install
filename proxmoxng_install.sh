@@ -244,9 +244,9 @@ if [[ -z "$DNS_ENTRY" || ! "$DNS_ENTRY" =~ ^([a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-z
     exit 1
 fi
 
-sed -i "s|pveha\.duckdns\.org|$DNS_ENTRY|g" /etc/proxmoxng/interface/pve-manager/www/manager6/window/NHACreateJSON.js
-sed -i "s|pveha\.duckdns\.org|$DNS_ENTRY|g" /etc/proxmoxng/interface/pve-manager/www/manager6/window/NHAExternalMigration.js
-sed -i "s|pveha\.duckdns\.org|$DNS_ENTRY|g" /etc/proxmoxng/interface/pve-manager/www/manager6/window/NHAFaultTolerance.js
+sed -i "s|domain\.tld|$DNS_ENTRY|g" /etc/proxmoxng/interface/pve-manager/www/manager6/window/NHACreateJSON.js
+sed -i "s|domain\.tld|$DNS_ENTRY|g" /etc/proxmoxng/interface/pve-manager/www/manager6/window/NHAExternalMigration.js
+sed -i "s|domain\.tld|$DNS_ENTRY|g" /etc/proxmoxng/interface/pve-manager/www/manager6/window/NHAFaultTolerance.js
 
 
 CERT_PATH=$(whiptail --inputbox "Please insert the certificate filepath for the middleware's DNS entry:" --title "Set Certificate Filepath" 10 60  3>&1 1>&2 2>&3)
