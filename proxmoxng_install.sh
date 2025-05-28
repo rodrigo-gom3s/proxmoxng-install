@@ -204,7 +204,7 @@ if [[ $PUSHOVER_USER =~ ^[a-zA-Z0-9]{1,30}$ ]]; then
         fi
 
 echo "[database]
-uri=\""${DB%/}"\"
+uri=\""${DB%/}/db.sqlite"\"
 
 [proxmox]
 ip=\"127.0.0.1\"
@@ -226,7 +226,7 @@ fi
 
 if [[ ! $PUSHOVER_USER =~ ^[a-zA-Z0-9]{1,30}$ ]]; then
 echo "[database]
-uri=\""${DB%/}"\"
+uri=\""${DB%/}/db.sqlite"\"
 
 [proxmox]
 ip=\"127.0.0.1\"
