@@ -235,7 +235,6 @@ while [ $PASSWORD != $CONFIRM_PASSWORD ]; do
     if [ "$PASSWORD" != "$CONFIRM_PASSWORD" ]; then
         whiptail --title "Password validation failed" --infobox "The passwords do not match, please try again." 10 60
         echo ""
-        exit 1
     fi
 done
 
