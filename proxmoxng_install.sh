@@ -239,6 +239,9 @@ while [ $PASSWORD != $CONFIRM_PASSWORD ]; do
     fi
 done
 
+echo "PASSWORD=$PASSWORD | CONFIRM_PASSWORD=$CONFIRM_PASSWORD"
+echo ""
+
 DNS_ENTRY=$(whiptail --inputbox "Please insert a FQDN for the middleware (it has to be an authorized one):" --title "Set Middleware FQDN" 10 60  3>&1 1>&2 2>&3)
 
 if [ $? -ne 0 ]; then
