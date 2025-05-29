@@ -255,25 +255,6 @@ if [[ -z "$DNS_ENTRY" || ! "$DNS_ENTRY" =~ ^([a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-z
     exit 1
 fi
 
-sed -i "s/domain\.tld/${DNS_ENTRY}/g" /etc/proxmoxng/interface/pve-manager/www/manager6/window/NHACreateJSON.js 2>/dev/null
-if [ $? -ne 0 ]; then
-    echo "[ERROR] - Failed to update the FQDN in NHACreateJSON.js, make sure you have root privileges."
-    echo ""
-    exit 1
-fi
-sed -i "s/domain\.tld/${DNS_ENTRY}/g" /etc/proxmoxng/interface/pve-manager/www/manager6/window/NHAExternalMigration.js 2>/dev/null
-if [ $? -ne 0 ]; then
-    echo "[ERROR] - Failed to update the FQDN in NHAExternalMigration.js, make sure you have root privileges."
-    echo ""
-    exit 1
-fi
-sed -i "s/domain\.tld/${DNS_ENTRY}/g" /etc/proxmoxng/interface/pve-manager/www/manager6/window/NHAFaultTolerance.js 2>/dev/null
-if [ $? -ne 0 ]; then
-    echo "[ERROR] - Failed to update the FQDN in NHAFaultTolerance.js, make sure you have root privileges."
-    echo ""
-    exit 1
-fi
-
 
 CERT_PATH=$(whiptail --inputbox "Please insert the certificate filepath for the middleware's DNS entry:" --title "Set Certificate Filepath" 10 60  3>&1 1>&2 2>&3)
 
@@ -437,6 +418,26 @@ if [ $? -ne 0 ]; then
         exit 1
     fi
 fi
+
+sed -i "s/domain\.tld/${DNS_ENTRY}/g" /etc/proxmoxng/interface/pve-manager/www/manager6/window/NHACreateJSON.js 2>/dev/null
+if [ $? -ne 0 ]; then
+    echo "[ERROR] - Failed to update the FQDN in NHACreateJSON.js, make sure you have root privileges."
+    echo ""
+    exit 1
+fi
+sed -i "s/domain\.tld/${DNS_ENTRY}/g" /etc/proxmoxng/interface/pve-manager/www/manager6/window/NHAExternalMigration.js 2>/dev/null
+if [ $? -ne 0 ]; then
+    echo "[ERROR] - Failed to update the FQDN in NHAExternalMigration.js, make sure you have root privileges."
+    echo ""
+    exit 1
+fi
+sed -i "s/domain\.tld/${DNS_ENTRY}/g" /etc/proxmoxng/interface/pve-manager/www/manager6/window/NHAFaultTolerance.js 2>/dev/null
+if [ $? -ne 0 ]; then
+    echo "[ERROR] - Failed to update the FQDN in NHAFaultTolerance.js, make sure you have root privileges."
+    echo ""
+    exit 1
+fi
+
 
 echo "[INSTALL - STEP 3] - ProxmoxNG - Compiling ProxmoxNG ..."
 echo ""
