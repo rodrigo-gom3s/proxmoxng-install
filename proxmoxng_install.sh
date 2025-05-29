@@ -67,7 +67,7 @@ if [ $? -ne 0 ]; then
     fi
 fi
 
-apt-get install -y git python3 python3-venv build-essential git-email debhelper pve-doc-generator libpod-parser-perl libtest-mockmodule-perl lintian pve-eslint sq 2>/dev/null
+apt-get install -y git python3 python3-venv build-essential python3-dev git-email debhelper pve-doc-generator libpod-parser-perl libtest-mockmodule-perl lintian pve-eslint sq 2>/dev/null
 if [ $? -ne 0 ]; then
     echo "[ERROR] - Failed to install ProxmoxNG dependencies, make sure you have root privileges and access to internet."
     echo ""
