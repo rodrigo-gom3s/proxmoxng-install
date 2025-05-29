@@ -188,6 +188,13 @@ if [ -z "$DB" ]; then
     exit 1
 fi
 
+ls "$DB" >/dev/null 2>/dev/null
+if [ $? -ne 0 ]; then
+    echo "[ERROR] - The database location is invalid or the directory does not exist."
+    echo ""
+    exit 1
+fi
+
 USER=$(whiptail --inputbox "Please enter the Proxmox username:" --title "Set Proxmox Username" 10 60 root@pam 3>&1 1>&2 2>&3)
 
 if [ $? -ne 0 ]; then
@@ -280,6 +287,13 @@ if [ -z "$CERT_PATH" ]; then
     exit 1
 fi
 
+cat "$CERT_PATH" >/dev/null 2>/dev/null
+if [ $? -ne 0 ]; then
+    echo "[ERROR] - The certificate filepath is invalid or the file does not exist."
+    echo ""
+    exit 1
+fi
+
 KEY_PATH=$(whiptail --inputbox "Please insert the key filepath for the certificate:" --title "Set Key Filepath" 10 60 3>&1 1>&2 2>&3)
 
 if [ $? -ne 0 ]; then
@@ -290,6 +304,13 @@ fi
 
 if [ -z "$KEY_PATH" ]; then
     echo "[ERROR] - You must set the key filepath"
+    echo ""
+    exit 1
+fi
+
+cat "$KEY_PATH" >/dev/null 2>/dev/null
+if [ $? -ne 0 ]; then
+    echo "[ERROR] - The key filepath is invalid or the file does not exist."
     echo ""
     exit 1
 fi
@@ -414,8 +435,6 @@ if [ $? -ne 0 ]; then
         exit 1
     fi
 fi
-
-sed 
 
 echo "[INSTALL - STEP 3] - ProxmoxNG - Compiling ProxmoxNG ..."
 echo ""
