@@ -458,6 +458,7 @@ fqdn=\"<fqdn>\" # Ex: domain.tld" >/etc/proxmoxng/middleware/example.auto_config
     fi
 
     ip=$(get_toml_value "$filepath" "keepalived" "ip")
+    echo "[INFO] - ProxmoxNG - IP: $ip"
     if [[ ! $ip =~ ^((25[0-5]|2[0-4][0-9]|1?[0-9]{1,2})\.){3}(25[0-5]|2[0-4][0-9]|1?[0-9]{1,2})$ ]]; then
         echo "[ERROR] - The IP address in the configuration file is invalid."
         echo ""
