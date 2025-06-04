@@ -153,14 +153,13 @@ case "$OPTION" in
 "2)")
     echo "[INSTALLING] - ProxmoxNG - Starting full installation in automatic mode ..."
 
-    echo "
-#Example of automatic configuration file
+    echo "#Example of automatic configuration file
 #Change the name of the file after editing
 [database]
-uri=\"<db_path>\" Ex: /mnt/sharedDisk/middleware/
+uri=\"<db_path>\" #Ex: /mnt/sharedDisk/middleware/
 
 [proxmox]
-user=\"<user>\" Ex: root@pam
+user=\"<user>\" #Ex: root@pam
 password=\"<password>\"
 
 [keepalived]
