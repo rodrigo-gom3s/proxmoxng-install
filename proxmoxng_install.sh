@@ -175,7 +175,7 @@ cert=\"<cert_path>\" # Ex: /mnt/sharedDisk/middleware/cert.pem
 key=\"<key_path>\" # Ex: /mnt/sharedDisk/middleware/key.pem
 fqdn=\"<fqdn>\" # Ex: domain.tld" > /etc/proxmoxng/middleware/example.auto_config.toml
 
-    filepath=$(whiptail --inputbox "Please enter the path to the ProxmoxNG auto-configuration file. \n Ex: /etc/proxmoxng/middleware/auto_config.toml \n Example file located in: \n /etc/proxmoxng/middleware/example.auto_config.toml" 10 60 --title "Set ProxmoxNG Configuration File Path" 3>&1 1>&2 2>&3)
+    filepath=$(whiptail --inputbox "Please enter the path to the ProxmoxNG auto-configuration file. \n Ex: /etc/proxmoxng/middleware/auto_config.toml \n Example file located in: \n /etc/proxmoxng/middleware/example.auto_config.toml" 15 60 --title "Set ProxmoxNG Configuration File Path" 3>&1 1>&2 2>&3)
     if [ $? -ne 0 ]; then
         cleanup
     fi
