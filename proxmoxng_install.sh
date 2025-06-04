@@ -100,13 +100,14 @@ function installing_middleware {
     echo ""
     echo "[SETUP - Middleware - STEP 1.3] - ProxmoxNG - Installing ProxmoxNG..."
     echo ""
-    pip install -i https://test.pypi.org/simple/ proxmoxng 2>/dev/null
+    pip install -i https://test.pypi.org/simple/ --upgrade --no-deps proxmoxng 2>/dev/null
     if [ $? -ne 0 ]; then
         echo "[ERROR] - Failed to install ProxmoxNG middleware, make sure you have root privileges and access to internet."
         echo ""
         exit 1
     fi
 }
+
 
 echo ""
 echo "[----------------------- PROXMOXNG INSTALLER -----------------------]"
@@ -129,6 +130,12 @@ installing_middleware
 case "$OPTION" in
 "1)")
     echo "[INSTALLING] - ProxmoxNG - Starting full installation ..."
+    ;;
+"2)")
+    echo "[INSTALLING] - ProxmoxNG - Starting full installation in automatic mode ..."
+
+    filepath=$(whiptail --inputbox "Please enter the path to the ProxmoxNG configuration file. \n Ex: ./auto_config.toml" 10 60 --title "Set ProxmoxNG Configuration File Path" 3>&1 1>&2 2>&3)
+
     ;;
 "4)")
     echo "[UPDATING] - ProxmoxNG - Starting update of the Middleware software ..."
