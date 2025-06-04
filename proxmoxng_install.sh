@@ -108,6 +108,25 @@ function installing_middleware {
     fi
 }
 
+#https://gist.github.com/kwmiebach/e42dc4a43d5a2a0f2c3fdc41620747ab
+function get_toml_value {
+
+    local file="$1"
+    local section="$2"
+    local key="$3"
+
+    get_section() {
+        local file="$1"
+        local section="$2"
+
+        sed -n "/^\[$section\]/,/^\[/p" "$file" | sed '$d'
+    }
+
+    get_section "$file" "$section" | grep "^$key " | cut -d "=" -f2- | tr -d ' "'
+}
+
+
+
 
 echo ""
 echo "[----------------------- PROXMOXNG INSTALLER -----------------------]"
@@ -134,7 +153,170 @@ case "$OPTION" in
 "2)")
     echo "[INSTALLING] - ProxmoxNG - Starting full installation in automatic mode ..."
 
-    filepath=$(whiptail --inputbox "Please enter the path to the ProxmoxNG configuration file. \n Ex: ./auto_config.toml" 10 60 --title "Set ProxmoxNG Configuration File Path" 3>&1 1>&2 2>&3)
+    echo "
+    #Example of automatic configuration file
+    [database]
+    uri=\"<db_path>\" Ex: /mnt/sharedDisk/middleware/
+
+    [proxmox]
+    user=\"<user>\" Ex: root@pam
+    password=\"<password>\"
+
+    [keepalived]
+    ip=\"<ip_address>\" #Ex: 192.168.100.100
+    priority=\"<node_priority>\" #Ex: 100
+
+    [pushover]
+    token=\"<application_token>\"
+    user=\"<user_token>\"
+    
+    [cert]
+    cert=\"<cert_path>\" #Ex: /mnt/sharedDisk/middleware/cert.pem
+    key=\"<key_path>\" #Ex: /mnt/sharedDisk/middleware/key.pem
+    fqdn=\"<fqdn>\" #Ex: domain.tld
+    " > /etc/proxmoxng/middleware/example.auto_config.toml
+
+    filepath=$(whiptail --inputbox "Please enter the path to the ProxmoxNG auto-configuration file. \n Ex: /etc/proxmoxng/middleware/auto_config.toml \n Example file located in: /etc/proxmoxng/middleware/example.auto_config.toml" 10 60 --title "Set ProxmoxNG Configuration File Path" 3>&1 1>&2 2>&3)
+    if [ $? -ne 0 ]; then
+        cleanup
+    fi
+
+    if [ -z "$filepath" ]; then
+        echo "[ERROR] - You must set a valid ProxmoxNG auto-configuration file path."
+        echo ""
+        exit 1
+    fi
+
+    db=$(get_toml_value "$filepath" "database" "uri")
+    ls "$DB" >/dev/null 2>/dev/null
+    if [ $? -ne 0 ]; then
+        echo "[ERROR] - The database location is invalid or the directory does not exist."
+        echo ""
+        exit 1
+    fi
+
+    ip=$(get_toml_value "$filepath" "keepalived" "ip")
+    if [[ ! $IP =~ ^((25[0-5]|2[0-4][0-9]|1?[0-9]{1,2})\.){3}(25[0-5]|2[0-4][0-9]|1?[0-9]{1,2})$ ]]; then
+        echo "[ERROR] - The IP address in the configuration file is invalid."
+        echo ""
+        exit 1
+    fi
+
+    priority=$(get_toml_value "$filepath" "keepalived" "priority")
+    if [[ ! $PRIORITY =~ ^[0-9]{1,3}$ ]]; then
+        echo "[ERROR] - The priority value in the configuration file is invalid."
+        echo ""
+        exit 1
+    fi
+
+    user=$(get_toml_value "$filepath" "proxmox" "user")
+    if [ -z "$USER" ]; then
+        echo "[ERROR] - The Proxmox username in the configuration file is invalid."
+        echo ""
+        exit 1
+    fi
+
+    password=$(get_toml_value "$filepath" "proxmox" "password")
+    if [ -z "$PASSWORD" ]; then
+        echo "[ERROR] - The Proxmox password in the configuration file is invalid."
+        echo ""
+        exit 1
+    fi
+
+    cert=$(get_toml_value "$filepath" "cert" "cert")
+    ls "$cert" >/dev/null 2>/dev/null
+    if [ $? -ne 0 ]; then
+        echo "[ERROR] - The certificate filepath in the configuration file is invalid or the file does not exist."
+        echo ""
+        exit 1
+    fi
+
+    key=$(get_toml_value "$filepath" "cert" "key")
+    ls "$key" >/dev/null 2>/dev/null
+    if [ $? -ne 0 ]; then
+        echo "[ERROR] - The key filepath in the configuration file is invalid or the file does not exist."
+        echo ""
+        exit 1
+    fi
+
+    fqdn=$(get_toml_value "$filepath" "cert" "fqdn")
+    if [[ -z "$fqdn" ]]; then
+        echo "[ERROR] - The FQDN in the configuration file is invalid."
+        echo ""
+        exit 1
+    fi
+
+    pushover_user=$(get_toml_value "$filepath" "pushover" "user")
+    pushover_token=$(get_toml_value "$filepath" "pushover" "token")
+    if [[ -n "$pushover_user" && -z "$pushover_token" ]]; then
+        echo "[ERROR] - The Pushover token in the configuration file is invalid."
+        echo ""
+        exit 1
+    fi
+
+    if [[ -z "$pushover_user" && -n "$pushover_token" ]]; then
+        echo "[ERROR] - The Pushover user in the configuration file is invalid."
+        echo ""
+        exit 1
+    fi
+
+    echo ""
+    echo "Writing keepalived configuration file ..."
+    echo ""
+    echo "vrrp_instance VI_1
+	interface vmbr0
+	virtual_router_id 101
+	state BACKUP
+	nopreempt
+	priority $priority
+	advert_int 1
+	authentication {
+		auth_type PASS
+		auth_pass 12345678
+	}
+	virtual_ipaddress {
+		$ip
+	}
+    }" >/etc/keepalived/keepalived.conf
+
+    if [[ $PUSHOVER_USER =~ ^[a-zA-Z0-9]{1,30}$ ]]; then
+        echo "[database]
+    uri=\""${db%/}/db.sqlite"\"
+
+    [proxmox]
+    ip=\"127.0.0.1\"
+    port=\"8006\"
+    user=\"$user\"
+    password=\"$password\"
+
+    [keepalived]
+    ip=\"$ip\"
+
+    [pushover]
+    token=\"$pushover_token\"
+    user=\"$pushover_user\"
+    
+    [cert]
+    cert=\"$cert\"
+    key=\"$key\"" >/etc/proxmoxng/middleware/config.toml
+
+    else
+        echo "[database]
+    uri=\""${db%/}/db.sqlite"\"
+
+    [proxmox]
+    ip=\"127.0.0.1\"
+    port=\"8006\"
+    user=\"$user\"
+    password=\"$password\"
+
+    [keepalived]
+    ip=\"$ip\"
+
+    [cert]
+    cert=\"$cert\"
+    key=\"$key\"" >/etc/proxmoxng/middleware/config.toml
+    fi
 
     ;;
 "4)")
@@ -222,6 +404,12 @@ echo "vrrp_instance VI_1
 		$IP
 	}
 }" >/etc/keepalived/keepalived.conf
+
+if [ $? -ne 0 ]; then
+    echo "[ERROR] - Failed to write keepalived configuration file, make sure you have root privileges."
+    echo ""
+    exit 1
+fi
 
 DB=$(whiptail --inputbox "Please enter the ProxmoxNG database location. This location needs to be accessible by all nodes. \n Ex: /mnt/sharedDisk/middleware/" 10 60 --title "Set ProxmoxNG Database Location" 3>&1 1>&2 2>&3)
 
@@ -334,7 +522,7 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-KEY_PATH=$(whiptail --inputbox "Please insert the key filepath for the certificate for the middleware's DSN entry:" --title "Set Key Filepath" 10 60 3>&1 1>&2 2>&3)
+KEY_PATH=$(whiptail --inputbox "Please insert the key filepath for the certificate for the middleware's DNS entry. Note: Needs to accessible by all nodes \n Ex: /mnt/sharedDisk/middleware/key.pem" --title "Set Key Filepath" 10 60 3>&1 1>&2 2>&3)
 
 if [ $? -ne 0 ]; then
     echo "[ERROR] - You must set the key filepath."
@@ -445,7 +633,6 @@ WantedBy=multi-user.target
 " >/etc/systemd/system/proxmoxng.service
 
 systemctl enable --now proxmoxng.service
-
 
 echo ""
 echo "[INSTALL - STEP 2] - ProxmoxNG - Downloading ProxmoxNG Interface..."
