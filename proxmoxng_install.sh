@@ -578,6 +578,7 @@ cert=\"$cert\"
 key=\"$key\"" >/etc/proxmoxng/middleware/config.toml
     fi
 
+    DNS_ENTRY=$fqdn
     ;;
 "4)")
     echo "[UPDATING] - ProxmoxNG - Starting update of the Middleware software ..."
