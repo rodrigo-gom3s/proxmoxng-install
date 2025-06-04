@@ -1,21 +1,141 @@
+function cleanup {
+    echo "[CANCELLED] - ProxmoxNG - Installation cancelled by the user."
+    exit 1
+}
+
+function pre_init {
+    echo "[PRE_SETUP - Packages - STEP 1] - ProxmoxNG - Installing test repository ..."
+    echo ""
+    echo "deb http://download.proxmox.com/debian bookworm pvetest" >/etc/apt/sources.list.d/pve-development.list 2>/dev/null
+    if [ $? -ne 0 ]; then
+        echo "[ERROR] - Failed to add PVE utilities repository, make sure you have root privileges."
+        echo ""
+        exit 1
+    fi
+
+    echo "[PRE_SETUP - Packages - STEP 2] - ProxmoxNG - Updating repositories ..."
+    echo ""
+    apt update -y 2>/dev/null
+    if [ $? -ne 0 ]; then
+        echo "[ERROR] - Failed to update repositories, make sure you have root privileges and access to internet."
+        echo ""
+        exit 1
+    fi
+
+    echo "[PRE_SETUP - Packages - STEP 3] - ProxmoxNG - Installing ProxmoxNG dependencies ..."
+    echo ""
+    apt-get install -y git python3 python3-venv build-essential python3-dev git-email debhelper pve-doc-generator libpod-parser-perl libtest-mockmodule-perl lintian pve-eslint sq keepalived 2>/dev/null
+    if [ $? -ne 0 ]; then
+        echo "[ERROR] - Failed to install ProxmoxNG dependencies, make sure you have root privileges and access to internet."
+        echo ""
+        exit 1
+    fi
+}
+
+function directory_creation {
+    echo ""
+    echo "[PRE_SETUP - Directories - STEP 1] - ProxmoxNG - Setting up ProxmoxNG directories ..."
+    echo ""
+
+    echo ""
+    echo "[PRE_SETUP - Directories - STEP 1.1] - ProxmoxNG - Creating main directory ..."
+    echo ""
+    mkdir /etc/proxmoxng >/dev/null 2>/dev/null
+    if [ $? -ne 0 ]; then
+        ls /etc/proxmoxng >/dev/null 2>/dev/null
+        if [ $? -ne 0 ]; then
+            echo "[ERROR] - Failed to create /etc/proxmoxng directory, make sure you have root privileges."
+            echo ""
+            exit 1
+        fi
+    fi
+
+    echo ""
+    echo "[PRE_SETUP - Directories - STEP 1.2] - ProxmoxNG - Creating middleware config directory ..."
+    echo ""
+    mkdir /etc/proxmoxng/middleware >/dev/null 2>/dev/null
+    if [ $? -ne 0 ]; then
+        ls /etc/proxmoxng/middleware >/dev/null 2>/dev/null
+        if [ $? -ne 0 ]; then
+            echo "[ERROR] - Failed to create /etc/proxmoxng/middleware directory, make sure you have root privileges."
+            echo ""
+            exit 1
+        fi
+    fi
+
+    echo ""
+    echo "[PRE_SETUP - Directories - STEP 1.3] - ProxmoxNG - Creating middleware executable directory ..."
+    echo ""
+    mkdir /usr/share/proxmoxng >/dev/null 2>/dev/null
+    if [ $? -ne 0 ]; then
+        ls /usr/share/proxmoxng >/dev/null 2>/dev/null
+        if [ $? -ne 0 ]; then
+            echo "[ERROR] - Failed to create /usr/share/proxmoxng directory, make sure you have root privileges."
+            echo ""
+            exit 1
+        fi
+    fi
+}
+
+function installing_middleware {
+    echo ""
+    echo "[SETUP - Middleware - STEP 1] - ProxmoxNG - Installing ProxmoxNG middleware ..."
+    echo ""
+
+    echo ""
+    echo "[SETUP - Middleware - STEP 1.1] - ProxmoxNG - Creating Python virtual environment..."
+    echo ""
+    python3 -m venv /usr/share/proxmoxng/.venv
+    if [ $? -ne 0 ]; then
+        echo "[ERROR] - Failed to create ProxmoxNG's python virtual environent, make sure you have root privileges."
+        echo ""
+        exit 1
+    fi
+
+    echo ""
+    echo "[SETUP - Middleware - STEP 1.2] - ProxmoxNG - Activating Python virtual environment..."
+    echo ""
+    source /usr/share/proxmoxng/.venv/bin/activate >/dev/null 2>/dev/null
+    if [ $? -ne 0 ]; then
+        echo "[ERROR] - Failed to activate ProxmoxNG's python virtual enviroment, make sure you have root privileges."
+        echo ""
+        exit 1
+    fi
+
+    echo ""
+    echo "[SETUP - Middleware - STEP 1.3] - ProxmoxNG - Installing ProxmoxNG..."
+    echo ""
+    pip install -i https://test.pypi.org/simple/ proxmoxng 2>/dev/null
+    if [ $? -ne 0 ]; then
+        echo "[ERROR] - Failed to install ProxmoxNG middleware, make sure you have root privileges and access to internet."
+        echo ""
+        exit 1
+    fi
+}
+
 echo ""
 echo "[----------------------- PROXMOXNG INSTALLER -----------------------]"
 echo ""
-TESTE=$(whiptail --title "ProxmoxNG Installer" --menu "Choose an option" 25 78 16 \
-    "1)" "Make a full installation of the ProxmoxNG" \
-    "2)" "Update the Middleware software" \
+OPTION=$(whiptail --title "ProxmoxNG Installer" --menu "Choose an option" 25 78 16 \
+    "1)" "Full installation - Normal Mode (Recommended)" \
+    "2)" "Full installation - Automatic Mode" \
+    "3)" "Full installation - Manual Mode" \
+    "4)" "Update the Middleware software" \
     3>&1 1>&2 2>&3)
 
 if [ $? -ne 0 ]; then
-    echo "[CANCELLED] - ProxmoxNG - Installation cancelled by the user."
-    exit 1
+    cleanup
 fi
 
-case "$TESTE" in
+pre_init
+directory_creation
+installing_middleware
+
+case "$OPTION" in
 "1)")
     echo "[INSTALLING] - ProxmoxNG - Starting full installation ..."
     ;;
-"2)")
+"4)")
     echo "[UPDATING] - ProxmoxNG - Starting update of the Middleware software ..."
     echo ""
     echo "[INSTALL] - ProxmoxNG - Updating ProxmoxNG middleware ..."
@@ -35,7 +155,7 @@ case "$TESTE" in
     fi
     echo "[SETUP] - ProxmoxNG - Updating ProxmoxNG service ..."
     echo ""
-    systemctl restart proxmoxng.service > /dev/null 2>/dev/null
+    systemctl restart proxmoxng.service >/dev/null 2>/dev/null
     if [ $? -ne 0 ]; then
         echo "[ERROR] - Failed to restart ProxmoxNG service, make sure you have root privileges and that you already have the ProxmoxNG installed."
         echo ""
@@ -46,87 +166,7 @@ case "$TESTE" in
     ;;
 esac
 
-echo "[SETUP - STEP 1] - ProxmoxNG - Updating system and installing ProxmoxNG dependencies ..."
-echo ""
-echo "deb http://download.proxmox.com/debian bookworm pvetest" >/etc/apt/sources.list.d/pve-development.list 2>/dev/null
-
-if [ $? -ne 0 ]; then
-    echo "[ERROR] - Failed to add PVE utilities repository, make sure you have root privileges."
-    echo ""
-    exit 1
-fi
-
-apt update -y 2>/dev/null
-apt upgrade -y 2>/dev/null
-if [ $? -ne 0 ]; then
-    dpkg --configure -a 2>/dev/null
-    if [ $? -ne 0 ]; then
-        echo "[ERROR] - Failed to configure dpkg, make sure you have root privileges and access to internet."
-        echo ""
-        exit 1
-    fi
-fi
-
-apt-get install -y git python3 python3-venv build-essential python3-dev git-email debhelper pve-doc-generator libpod-parser-perl libtest-mockmodule-perl lintian pve-eslint sq 2>/dev/null
-if [ $? -ne 0 ]; then
-    echo "[ERROR] - Failed to install ProxmoxNG dependencies, make sure you have root privileges and access to internet."
-    echo ""
-    exit 1
-fi
-
-echo ""
-echo "[SETUP - STEP 2] - ProxmoxNG - Setting up ProxmoxNG directories ..."
-echo ""
-
-mkdir /etc/proxmoxng >/dev/null 2>/dev/null
-if [ $? -ne 0 ]; then
-    ls /etc/proxmoxng >/dev/null 2>/dev/null
-    if [ $? -ne 0 ]; then
-        echo "[ERROR] - Failed to create /etc/proxmoxng directory, make sure you have root privileges."
-        echo ""
-        exit 1
-    fi
-fi
-
-mkdir /etc/proxmoxng/middleware >/dev/null 2>/dev/null
-if [ $? -ne 0 ]; then
-    ls /etc/proxmoxng/middleware >/dev/null 2>/dev/null
-    if [ $? -ne 0 ]; then
-        echo "[ERROR] - Failed to create /etc/proxmoxng/middleware directory, make sure you have root privileges."
-        echo ""
-        exit 1
-    fi
-fi
-
-mkdir /usr/share/proxmoxng >/dev/null 2>/dev/null
-if [ $? -ne 0 ]; then
-    ls /usr/share/proxmoxng >/dev/null 2>/dev/null
-    if [ $? -ne 0 ]; then
-        echo "[ERROR] - Failed to create /usr/share/proxmoxng directory, make sure you have root privileges."
-        echo ""
-        exit 1
-    fi
-fi
-
-python3 -m venv /usr/share/proxmoxng/.venv
-
-if [ $? -ne 0 ]; then
-    echo "[ERROR] - Failed to create ProxmoxNG's python virtual enviroment, make sure you have root privileges."
-    echo ""
-    exit 1
-fi
-
-echo "[SETUP - STEP 3] - ProxmoxNG - Setting up Keepalived ..."
-echo ""
-
-apt-get install keepalived -y
-
-if [ $? -ne 0 ]; then
-    echo "[ERROR] - Failed to install keepailved, make sure you have root privileges and access to the internet."
-    echo ""
-fi
-
-IP=$(whiptail --inputbox "Please enter the cluster IP address:" 10 60 --title "Set Cluster IP Address" 3>&1 1>&2 2>&3)
+IP=$(whiptail --inputbox "Please enter the cluster IP address:" 10 60 --title "Set Middleware IP Address. The FQDN needs to resolve this ip address. \n Ex: 192.168.100.100" 3>&1 1>&2 2>&3)
 
 if [ $? -ne 0 ]; then
     echo "[ERROR] - You must insert a virtual IP to your Proxmox cluster."
@@ -241,7 +281,7 @@ done
 echo "PASSWORD=$PASSWORD | CONFIRM_PASSWORD=$CONFIRM_PASSWORD"
 echo ""
 
-DNS_ENTRY=$(whiptail --inputbox "Please insert a FQDN for the middleware (it has to be an authorized one):" --title "Set Middleware FQDN" 10 60  3>&1 1>&2 2>&3)
+DNS_ENTRY=$(whiptail --inputbox "Please insert a FQDN for the middleware (it has to be an authorized one):" --title "Set Middleware FQDN" 10 60 3>&1 1>&2 2>&3)
 
 if [ $? -ne 0 ]; then
     echo "[ERROR] - You must set a valid FQDN."
@@ -255,8 +295,7 @@ if [[ -z "$DNS_ENTRY" || ! "$DNS_ENTRY" =~ ^([a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-z
     exit 1
 fi
 
-
-CERT_PATH=$(whiptail --inputbox "Please insert the certificate filepath for the middleware's DNS entry:" --title "Set Certificate Filepath" 10 60  3>&1 1>&2 2>&3)
+CERT_PATH=$(whiptail --inputbox "Please insert the certificate filepath for the middleware's DNS entry:" --title "Set Certificate Filepath" 10 60 3>&1 1>&2 2>&3)
 
 if [ $? -ne 0 ]; then
     echo "[ERROR] - You must set the certificate filepath."
@@ -438,7 +477,6 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-
 echo "[INSTALL - STEP 3] - ProxmoxNG - Compiling ProxmoxNG ..."
 echo ""
 cd /etc/proxmoxng/interface/pve-manager && make >/dev/null 2>/dev/null
@@ -455,5 +493,3 @@ echo ""
 echo "[--------------------------------------------------------------------------------]"
 echo ""
 exit 0
-
-domain.tld
