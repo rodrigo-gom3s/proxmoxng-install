@@ -109,23 +109,21 @@ function installing_middleware {
 }
 
 #https://gist.github.com/kwmiebach/e42dc4a43d5a2a0f2c3fdc41620747ab
-function get_toml_value {
+get_toml_value() {
 
-    local file="$1"
-    local section="$2"
-    local key="$3"
+    local file=$1
+    local section=$2
+    local key=$3
 
     get_section() {
-        local file="$1"
-        local section="$2"
+        local file=$1
+        local section=$2
 
         
-        local response = ${sed -n "/^\[$section\]/,/^\[/p" "$file" | sed '$d'}
-        echo "$response"
+        sed -n "/^\[$section\]/,/^\[/p" "$file" | sed '$d'
     }
 
-    local response = ${get_section "$file" "$section" | grep "^$key " | cut -d "=" -f2- | tr -d ' "'}
-    echo "$response"
+    get_section "$file" "$section" | grep "^$key" | cut -d "=" -f2- | tr -d ' "'
 }
 
 echo ""
@@ -460,28 +458,28 @@ fqdn=\"<fqdn>\" # Ex: domain.tld" >/etc/proxmoxng/middleware/example.auto_config
     fi
 
     ip=$(get_toml_value "$filepath" "keepalived" "ip")
-    if [[ ! $IP =~ ^((25[0-5]|2[0-4][0-9]|1?[0-9]{1,2})\.){3}(25[0-5]|2[0-4][0-9]|1?[0-9]{1,2})$ ]]; then
+    if [[ ! $ip =~ ^((25[0-5]|2[0-4][0-9]|1?[0-9]{1,2})\.){3}(25[0-5]|2[0-4][0-9]|1?[0-9]{1,2})$ ]]; then
         echo "[ERROR] - The IP address in the configuration file is invalid."
         echo ""
         exit 1
     fi
 
     priority=$(get_toml_value "$filepath" "keepalived" "priority")
-    if [[ ! $PRIORITY =~ ^[0-9]{1,3}$ ]]; then
+    if [[ ! $priority =~ ^[0-9]{1,3}$ ]]; then
         echo "[ERROR] - The priority value in the configuration file is invalid."
         echo ""
         exit 1
     fi
 
     user=$(get_toml_value "$filepath" "proxmox" "user")
-    if [ -z "$USER" ]; then
+    if [ -z "$user" ]; then
         echo "[ERROR] - The Proxmox username in the configuration file is invalid."
         echo ""
         exit 1
     fi
 
     password=$(get_toml_value "$filepath" "proxmox" "password")
-    if [ -z "$PASSWORD" ]; then
+    if [ -z "$password" ]; then
         echo "[ERROR] - The Proxmox password in the configuration file is invalid."
         echo ""
         exit 1
@@ -543,7 +541,7 @@ virtual_ipaddress {
 }
 }" >/etc/keepalived/keepalived.conf
 
-    if [[ $PUSHOVER_USER =~ ^[a-zA-Z0-9]{1,30}$ ]]; then
+    if [[ $pushover_user =~ ^[a-zA-Z0-9]{1,30}$ ]]; then
         echo "[database]
 uri=\""${db%/}/db.sqlite"\"
 
