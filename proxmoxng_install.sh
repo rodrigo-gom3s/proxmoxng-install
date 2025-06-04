@@ -154,29 +154,29 @@ case "$OPTION" in
     echo "[INSTALLING] - ProxmoxNG - Starting full installation in automatic mode ..."
 
     echo "
-    #Example of automatic configuration file
-    [database]
-    uri=\"<db_path>\" Ex: /mnt/sharedDisk/middleware/
+#Example of automatic configuration file
+#Change the name of the file after editing
+[database]
+uri=\"<db_path>\" Ex: /mnt/sharedDisk/middleware/
 
-    [proxmox]
-    user=\"<user>\" Ex: root@pam
-    password=\"<password>\"
+[proxmox]
+user=\"<user>\" Ex: root@pam
+password=\"<password>\"
 
-    [keepalived]
-    ip=\"<ip_address>\" #Ex: 192.168.100.100
-    priority=\"<node_priority>\" #Ex: 100
+[keepalived]
+ip=\"<ip_address>\" #Ex: 192.168.100.100
+priority=\"<node_priority>\" #Ex: 100
 
-    [pushover]
-    token=\"<application_token>\"
-    user=\"<user_token>\"
+#[pushover] 
+#token=\"<application_token>\"
+#user=\"<user_token>\"
     
-    [cert]
-    cert=\"<cert_path>\" #Ex: /mnt/sharedDisk/middleware/cert.pem
-    key=\"<key_path>\" #Ex: /mnt/sharedDisk/middleware/key.pem
-    fqdn=\"<fqdn>\" #Ex: domain.tld
-    " > /etc/proxmoxng/middleware/example.auto_config.toml
+[cert]
+cert=\"<cert_path>\" #Ex: /mnt/sharedDisk/middleware/cert.pem
+key=\"<key_path>\" #Ex: /mnt/sharedDisk/middleware/key.pem
+fqdn=\"<fqdn>\" #Ex: domain.tld" > /etc/proxmoxng/middleware/example.auto_config.toml
 
-    filepath=$(whiptail --inputbox "Please enter the path to the ProxmoxNG auto-configuration file. \n Ex: /etc/proxmoxng/middleware/auto_config.toml \n Example file located in: /etc/proxmoxng/middleware/example.auto_config.toml" 10 60 --title "Set ProxmoxNG Configuration File Path" 3>&1 1>&2 2>&3)
+    filepath=$(whiptail --inputbox "Please enter the path to the ProxmoxNG auto-configuration file. \n Ex: /etc/proxmoxng/middleware/auto_config.toml \n Example file located in: \n /etc/proxmoxng/middleware/example.auto_config.toml" 10 60 --title "Set ProxmoxNG Configuration File Path" 3>&1 1>&2 2>&3)
     if [ $? -ne 0 ]; then
         cleanup
     fi
@@ -264,58 +264,58 @@ case "$OPTION" in
     echo "Writing keepalived configuration file ..."
     echo ""
     echo "vrrp_instance VI_1
-	interface vmbr0
-	virtual_router_id 101
-	state BACKUP
-	nopreempt
-	priority $priority
-	advert_int 1
-	authentication {
-		auth_type PASS
-		auth_pass 12345678
-	}
-	virtual_ipaddress {
-		$ip
-	}
-    }" >/etc/keepalived/keepalived.conf
+interface vmbr0
+virtual_router_id 101
+state BACKUP
+nopreempt
+priority $priority
+advert_int 1
+authentication {
+	auth_type PASS
+	auth_pass 12345678
+}
+virtual_ipaddress {
+	$ip
+}
+}" >/etc/keepalived/keepalived.conf
 
     if [[ $PUSHOVER_USER =~ ^[a-zA-Z0-9]{1,30}$ ]]; then
         echo "[database]
-    uri=\""${db%/}/db.sqlite"\"
+uri=\""${db%/}/db.sqlite"\"
 
-    [proxmox]
-    ip=\"127.0.0.1\"
-    port=\"8006\"
-    user=\"$user\"
-    password=\"$password\"
+[proxmox]
+ip=\"127.0.0.1\"
+port=\"8006\"
+user=\"$user\"
+password=\"$password\"
 
-    [keepalived]
-    ip=\"$ip\"
+[keepalived]
+ip=\"$ip\"
 
-    [pushover]
-    token=\"$pushover_token\"
-    user=\"$pushover_user\"
+[pushover]
+token=\"$pushover_token\"
+user=\"$pushover_user\"
     
-    [cert]
-    cert=\"$cert\"
-    key=\"$key\"" >/etc/proxmoxng/middleware/config.toml
+[cert]
+cert=\"$cert\"
+key=\"$key\"" >/etc/proxmoxng/middleware/config.toml
 
     else
         echo "[database]
-    uri=\""${db%/}/db.sqlite"\"
+uri=\""${db%/}/db.sqlite"\"
 
-    [proxmox]
-    ip=\"127.0.0.1\"
-    port=\"8006\"
-    user=\"$user\"
-    password=\"$password\"
+[proxmox]
+ip=\"127.0.0.1\"
+port=\"8006\"
+user=\"$user\"
+password=\"$password\"
 
-    [keepalived]
-    ip=\"$ip\"
+[keepalived]
+ip=\"$ip\"
 
-    [cert]
-    cert=\"$cert\"
-    key=\"$key\"" >/etc/proxmoxng/middleware/config.toml
+[cert]
+cert=\"$cert\"
+key=\"$key\"" >/etc/proxmoxng/middleware/config.toml
     fi
 
     ;;
