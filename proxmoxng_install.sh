@@ -161,7 +161,7 @@ case "$OPTION" in
     ;;
 esac
 
-IP=$(whiptail --inputbox "Please enter the cluster IP address:" 10 60 --title "Set Middleware IP Address. The FQDN needs to resolve this ip address. \n Ex: 192.168.100.100" 3>&1 1>&2 2>&3)
+IP=$(whiptail --inputbox "Please enter the middleware IP address:" 10 60 --title "Set Middleware IP Address. The FQDN needs to resolve this ip address. \n Ex: 192.168.100.100" 3>&1 1>&2 2>&3)
 
 if [ $? -ne 0 ]; then
     echo "[ERROR] - You must insert a virtual IP to your Proxmox cluster."
@@ -175,7 +175,9 @@ if [[ ! $IP =~ ^((25[0-5]|2[0-4][0-9]|1?[0-9]{1,2})\.){3}(25[0-5]|2[0-4][0-9]|1?
     exit 1
 fi
 
-PRIORITY=$(whiptail --inputbox "Please enter the keepalived node priority:" 10 60 --title "Set Keepalived Node Priority" 3>&1 1>&2 2>&3)
+
+
+PRIORITY=$(whiptail --inputbox "Please enter the keepalived priority:" 10 60 --title "Set Keepalived priority for this node. Note: Each node needs to have a different priority. Higher number, higher priority. \n Ex: 100" 3>&1 1>&2 2>&3)
 
 if [ $? -ne 0 ]; then
     echo "[ERROR] - You must set a keepalived node priority for this node."
