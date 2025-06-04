@@ -111,6 +111,7 @@ function installing_middleware {
 #https://gist.github.com/kwmiebach/e42dc4a43d5a2a0f2c3fdc41620747ab
 function get_toml_value {
 
+    echo "${1} ${2} ${3}"
     local file="$1"
     local section="$2"
     local key="$3"
