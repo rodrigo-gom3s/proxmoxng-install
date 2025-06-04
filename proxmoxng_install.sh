@@ -125,9 +125,6 @@ function get_toml_value {
     get_section "$file" "$section" | grep "^$key " | cut -d "=" -f2- | tr -d ' "'
 }
 
-
-
-
 echo ""
 echo "[----------------------- PROXMOXNG INSTALLER -----------------------]"
 echo ""
@@ -149,6 +146,270 @@ installing_middleware
 case "$OPTION" in
 "1)")
     echo "[INSTALLING] - ProxmoxNG - Starting full installation ..."
+
+    IP=$(whiptail --inputbox "Please enter the middleware IP address. The FQDN needs to resolve this ip address. \n Ex: 192.168.100.100" 10 60 --title "Set Middleware IP Address." 3>&1 1>&2 2>&3)
+
+    if [ $? -ne 0 ]; then
+        echo "[ERROR] - You must insert a virtual IP to your Proxmox cluster."
+        echo ""
+        exit 1
+    fi
+
+    if [[ ! $IP =~ ^((25[0-5]|2[0-4][0-9]|1?[0-9]{1,2})\.){3}(25[0-5]|2[0-4][0-9]|1?[0-9]{1,2})$ ]]; then
+        echo "[ERROR] - You must insert a valid virtual IP."
+        echo ""
+        exit 1
+    fi
+
+    echo ""
+    echo "Middleware IP Address: $IP"
+    echo ""
+
+    PRIORITY=$(whiptail --inputbox "Please enter the keepalived priority value. Note: Each node needs to have a different priority. Higher number, higher priority. \n Ex: 100" 10 60 --title "Set Keepalived priority for this node." 3>&1 1>&2 2>&3)
+
+    if [ $? -ne 0 ]; then
+        echo "[ERROR] - You must set a keepalived node priority for this node."
+        echo ""
+        exit 1
+    fi
+
+    if [[ ! $PRIORITY =~ ^[0-9]{1,3}$ ]]; then
+        echo "[ERROR] - You must set a valid keepalived node priority for this node."
+        echo ""
+        exit 1
+    fi
+
+    echo ""
+    echo "Keepalived priority value: $PRIORITY"
+    echo ""
+
+    echo ""
+    echo "Writing keepalived configuration file ..."
+    echo ""
+    echo "vrrp_instance VI_1
+	interface vmbr0
+	virtual_router_id 101
+	state BACKUP
+	nopreempt
+	priority $PRIORITY
+	advert_int 1
+	authentication {
+		auth_type PASS
+		auth_pass 12345678
+	}
+	virtual_ipaddress {
+		$IP
+	}
+}" >/etc/keepalived/keepalived.conf
+
+    if [ $? -ne 0 ]; then
+        echo "[ERROR] - Failed to write keepalived configuration file, make sure you have root privileges."
+        echo ""
+        exit 1
+    fi
+
+    DB=$(whiptail --inputbox "Please enter the ProxmoxNG database location. This location needs to be accessible by all nodes. \n Ex: /mnt/sharedDisk/middleware/" 10 60 --title "Set ProxmoxNG Database Location" 3>&1 1>&2 2>&3)
+
+    if [ $? -ne 0 ]; then
+        echo "[ERROR] - You must set a location for the ProxmoxNG database."
+        echo ""
+        exit 1
+    fi
+
+    if [ -z "$DB" ]; then
+        echo "[ERROR] - You must set a location for the ProxmoxNG database."
+        echo ""
+        exit 1
+    fi
+
+    ls "$DB" >/dev/null 2>/dev/null
+    if [ $? -ne 0 ]; then
+        echo "[ERROR] - The database location is invalid or the directory does not exist."
+        echo ""
+        exit 1
+    fi
+
+    echo ""
+    echo "ProxmoxNG Database Location: $DB"
+    echo ""
+
+    USER=$(whiptail --inputbox "Please enter the Proxmox username:" --title "Set Proxmox Username" 10 60 root@pam 3>&1 1>&2 2>&3)
+
+    if [ $? -ne 0 ]; then
+        echo "[ERROR] - You must set the Proxmox username."
+        echo ""
+        exit 1
+    fi
+
+    if [ -z "$USER" ]; then
+        echo "[ERROR] - You must set the Proxmox username."
+        echo ""
+        exit 1
+    fi
+
+    echo ""
+    echo "Proxmox Username: $USER"
+    echo ""
+
+    while [ $PASSWORD != $CONFIRM_PASSWORD ]; do
+        PASSWORD=$(whiptail --passwordbox "Please enter the Proxmox user password:" 10 60 --title "Set Proxmox User Password" 3>&1 1>&2 2>&3)
+
+        if [ $? -ne 0 ]; then
+            echo "[ERROR] - You must set the Proxmox password."
+            echo ""
+            exit 1
+        fi
+
+        if [ -z "$PASSWORD" ]; then
+            echo "[ERROR] - You must set the Proxmox password."
+            echo ""
+            exit 1
+        fi
+
+        CONFIRM_PASSWORD=$(whiptail --passwordbox "Please confirm the Proxmox user password:" 10 60 --title "Confirm Proxmox User Password" 3>&1 1>&2 2>&3)
+
+        if [ $? -ne 0 ] || [ -z "$CONFIRM_PASSWORD" ]; then
+            echo "[ERROR] - You must confirm the Proxmox password."
+            echo ""
+            exit 1
+        fi
+
+        if [ "$PASSWORD" != "$CONFIRM_PASSWORD" ]; then
+            whiptail --title "Password validation failed" --infobox "The passwords do not match, please try again." 10 60
+            echo ""
+        fi
+    done
+
+    DNS_ENTRY=$(whiptail --inputbox "Please insert a FQDN for the middleware (it has to be an authorized one and with valid certificates). \n Ex: domain.tld" --title "Set Middleware FQDN" 10 60 3>&1 1>&2 2>&3)
+
+    if [ $? -ne 0 ]; then
+        echo "[ERROR] - You must set a valid FQDN."
+        echo ""
+        exit 1
+    fi
+
+    if [[ -z "$DNS_ENTRY" || ! "$DNS_ENTRY" =~ ^([a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$ ]]; then
+        echo "[ERROR] - You must set a valid FQDN"
+        echo ""
+        exit 1
+    fi
+
+    echo ""
+    echo "Middleware FQDN: $DNS_ENTRY"
+    echo ""
+
+    CERT_PATH=$(whiptail --inputbox "Please insert the certificate filepath for the middleware's DNS entry. Note: Needs to accessible by all nodes \n Ex: /mnt/sharedDisk/middleware/cert.pem" --title "Set Certificate Filepath" 10 60 3>&1 1>&2 2>&3)
+
+    if [ $? -ne 0 ]; then
+        echo "[ERROR] - You must set the certificate filepath."
+        echo ""
+        exit 1
+    fi
+
+    if [ -z "$CERT_PATH" ]; then
+        echo "[ERROR] - You must set the certificate filepath"
+        echo ""
+        exit 1
+    fi
+
+    cat "$CERT_PATH" >/dev/null 2>/dev/null
+    if [ $? -ne 0 ]; then
+        echo "[ERROR] - The certificate filepath is invalid or the file does not exist."
+        echo ""
+        exit 1
+    fi
+
+    KEY_PATH=$(whiptail --inputbox "Please insert the key filepath for the certificate for the middleware's DNS entry. Note: Needs to accessible by all nodes \n Ex: /mnt/sharedDisk/middleware/key.pem" --title "Set Key Filepath" 10 60 3>&1 1>&2 2>&3)
+
+    if [ $? -ne 0 ]; then
+        echo "[ERROR] - You must set the key filepath."
+        echo ""
+        exit 1
+    fi
+
+    if [ -z "$KEY_PATH" ]; then
+        echo "[ERROR] - You must set the key filepath"
+        echo ""
+        exit 1
+    fi
+
+    cat "$KEY_PATH" >/dev/null 2>/dev/null
+    if [ $? -ne 0 ]; then
+        echo "[ERROR] - The key filepath is invalid or the file does not exist."
+        echo ""
+        exit 1
+    fi
+
+    PUSHOVER_USER=$(whiptail --inputbox "(Optional) Please enter the Pushover username:" 10 60 --title "Set Proxmox Username" 3>&1 1>&2 2>&3)
+
+    if [ $? -ne 0 ]; then
+        echo "[ERROR] - You must set the Pushover username."
+        echo ""
+        exit 1
+    fi
+
+    if [[ $PUSHOVER_USER =~ ^[a-zA-Z0-9]{1,30}$ ]]; then
+        PUSHOVER_TOKEN=$(whiptail --inputbox "Please enter the Pushover token:" 10 60 --title "Set Proxmox Token" 3>&1 1>&2 2>&3)
+        if [ $? -ne 0 ]; then
+            echo "[ERROR] - You must set the Pushover token."
+            echo ""
+            exit 1
+        fi
+        if [ -z "$PUSHOVER_TOKEN" ]; then
+            echo "[ERROR] - You must set the Proxmox token."
+            echo ""
+            exit 1
+        fi
+
+        echo "[database]
+uri=\""${DB%/}/db.sqlite"\"
+
+[proxmox]
+ip=\"127.0.0.1\"
+port=\"8006\"
+user=\"$USER\"
+password=\"$PASSWORD\"
+
+[keepalived]
+ip=\"$IP\"
+
+[pushover]
+token=\"$PUSHOVER_TOKEN\"
+user=\"$PUSHOVER_USER\"
+[cert]
+cert=\"$CERT_PATH\"
+key=\"$KEY_PATH\"" >/etc/proxmoxng/middleware/config.toml
+
+        if [ $? -ne 0 ]; then
+            echo "[ERROR] - Failed to create /etc/proxmoxng/middleware/config.toml file, make sure you have root privileges."
+            echo ""
+            exit 1
+        fi
+
+    fi
+
+    if [[ ! $PUSHOVER_USER =~ ^[a-zA-Z0-9]{1,30}$ ]]; then
+        echo "[database]
+uri=\""${DB%/}/db.sqlite"\"
+
+[proxmox]
+ip=\"127.0.0.1\"
+port=\"8006\"
+user=\"$USER\"
+password=\"$PASSWORD\"
+
+[keepalived]
+ip=\"$IP\"
+
+[cert]
+cert=\"$CERT_PATH\"
+key=\"$KEY_PATH\"" >/etc/proxmoxng/middleware/config.toml
+        if [ $? -ne 0 ]; then
+            echo "[ERROR] - Failed to create /etc/proxmoxng/middleware/config.toml file, make sure you have root privileges."
+            echo ""
+            exit 1
+        fi
+    fi
     ;;
 "2)")
     echo "[INSTALLING] - ProxmoxNG - Starting full installation in automatic mode ..."
@@ -173,7 +434,7 @@ priority=\"<node_priority>\" # Ex: 100
 [cert]
 cert=\"<cert_path>\" # Ex: /mnt/sharedDisk/middleware/cert.pem
 key=\"<key_path>\" # Ex: /mnt/sharedDisk/middleware/key.pem
-fqdn=\"<fqdn>\" # Ex: domain.tld" > /etc/proxmoxng/middleware/example.auto_config.toml
+fqdn=\"<fqdn>\" # Ex: domain.tld" >/etc/proxmoxng/middleware/example.auto_config.toml
 
     filepath=$(whiptail --inputbox "Please enter the path to the ProxmoxNG auto-configuration file. \n Ex: /etc/proxmoxng/middleware/auto_config.toml \n Example file located in: \n /etc/proxmoxng/middleware/example.auto_config.toml" 15 60 --title "Set ProxmoxNG Configuration File Path" 3>&1 1>&2 2>&3)
     if [ $? -ne 0 ]; then
@@ -348,270 +609,6 @@ key=\"$key\"" >/etc/proxmoxng/middleware/config.toml
     exit 0
     ;;
 esac
-
-IP=$(whiptail --inputbox "Please enter the middleware IP address. The FQDN needs to resolve this ip address. \n Ex: 192.168.100.100" 10 60 --title "Set Middleware IP Address." 3>&1 1>&2 2>&3)
-
-if [ $? -ne 0 ]; then
-    echo "[ERROR] - You must insert a virtual IP to your Proxmox cluster."
-    echo ""
-    exit 1
-fi
-
-if [[ ! $IP =~ ^((25[0-5]|2[0-4][0-9]|1?[0-9]{1,2})\.){3}(25[0-5]|2[0-4][0-9]|1?[0-9]{1,2})$ ]]; then
-    echo "[ERROR] - You must insert a valid virtual IP."
-    echo ""
-    exit 1
-fi
-
-echo ""
-echo "Middleware IP Address: $IP"
-echo ""
-
-PRIORITY=$(whiptail --inputbox "Please enter the keepalived priority value. Note: Each node needs to have a different priority. Higher number, higher priority. \n Ex: 100" 10 60 --title "Set Keepalived priority for this node." 3>&1 1>&2 2>&3)
-
-if [ $? -ne 0 ]; then
-    echo "[ERROR] - You must set a keepalived node priority for this node."
-    echo ""
-    exit 1
-fi
-
-if [[ ! $PRIORITY =~ ^[0-9]{1,3}$ ]]; then
-    echo "[ERROR] - You must set a valid keepalived node priority for this node."
-    echo ""
-    exit 1
-fi
-
-echo ""
-echo "Keepalived priority value: $PRIORITY"
-echo ""
-
-echo ""
-echo "Writing keepalived configuration file ..."
-echo ""
-echo "vrrp_instance VI_1
-	interface vmbr0
-	virtual_router_id 101
-	state BACKUP
-	nopreempt
-	priority $PRIORITY
-	advert_int 1
-	authentication {
-		auth_type PASS
-		auth_pass 12345678
-	}
-	virtual_ipaddress {
-		$IP
-	}
-}" >/etc/keepalived/keepalived.conf
-
-if [ $? -ne 0 ]; then
-    echo "[ERROR] - Failed to write keepalived configuration file, make sure you have root privileges."
-    echo ""
-    exit 1
-fi
-
-DB=$(whiptail --inputbox "Please enter the ProxmoxNG database location. This location needs to be accessible by all nodes. \n Ex: /mnt/sharedDisk/middleware/" 10 60 --title "Set ProxmoxNG Database Location" 3>&1 1>&2 2>&3)
-
-if [ $? -ne 0 ]; then
-    echo "[ERROR] - You must set a location for the ProxmoxNG database."
-    echo ""
-    exit 1
-fi
-
-if [ -z "$DB" ]; then
-    echo "[ERROR] - You must set a location for the ProxmoxNG database."
-    echo ""
-    exit 1
-fi
-
-ls "$DB" >/dev/null 2>/dev/null
-if [ $? -ne 0 ]; then
-    echo "[ERROR] - The database location is invalid or the directory does not exist."
-    echo ""
-    exit 1
-fi
-
-echo ""
-echo "ProxmoxNG Database Location: $DB"
-echo ""
-
-USER=$(whiptail --inputbox "Please enter the Proxmox username:" --title "Set Proxmox Username" 10 60 root@pam 3>&1 1>&2 2>&3)
-
-if [ $? -ne 0 ]; then
-    echo "[ERROR] - You must set the Proxmox username."
-    echo ""
-    exit 1
-fi
-
-if [ -z "$USER" ]; then
-    echo "[ERROR] - You must set the Proxmox username."
-    echo ""
-    exit 1
-fi
-
-echo ""
-echo "Proxmox Username: $USER"
-echo ""
-
-while [ $PASSWORD != $CONFIRM_PASSWORD ]; do
-    PASSWORD=$(whiptail --passwordbox "Please enter the Proxmox user password:" 10 60 --title "Set Proxmox User Password" 3>&1 1>&2 2>&3)
-
-    if [ $? -ne 0 ]; then
-        echo "[ERROR] - You must set the Proxmox password."
-        echo ""
-        exit 1
-    fi
-
-    if [ -z "$PASSWORD" ]; then
-        echo "[ERROR] - You must set the Proxmox password."
-        echo ""
-        exit 1
-    fi
-
-    CONFIRM_PASSWORD=$(whiptail --passwordbox "Please confirm the Proxmox user password:" 10 60 --title "Confirm Proxmox User Password" 3>&1 1>&2 2>&3)
-
-    if [ $? -ne 0 ] || [ -z "$CONFIRM_PASSWORD" ]; then
-        echo "[ERROR] - You must confirm the Proxmox password."
-        echo ""
-        exit 1
-    fi
-
-    if [ "$PASSWORD" != "$CONFIRM_PASSWORD" ]; then
-        whiptail --title "Password validation failed" --infobox "The passwords do not match, please try again." 10 60
-        echo ""
-    fi
-done
-
-DNS_ENTRY=$(whiptail --inputbox "Please insert a FQDN for the middleware (it has to be an authorized one and with valid certificates). \n Ex: domain.tld" --title "Set Middleware FQDN" 10 60 3>&1 1>&2 2>&3)
-
-if [ $? -ne 0 ]; then
-    echo "[ERROR] - You must set a valid FQDN."
-    echo ""
-    exit 1
-fi
-
-if [[ -z "$DNS_ENTRY" || ! "$DNS_ENTRY" =~ ^([a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$ ]]; then
-    echo "[ERROR] - You must set a valid FQDN"
-    echo ""
-    exit 1
-fi
-
-echo ""
-echo "Middleware FQDN: $DNS_ENTRY"
-echo ""
-
-CERT_PATH=$(whiptail --inputbox "Please insert the certificate filepath for the middleware's DNS entry. Note: Needs to accessible by all nodes \n Ex: /mnt/sharedDisk/middleware/cert.pem" --title "Set Certificate Filepath" 10 60 3>&1 1>&2 2>&3)
-
-if [ $? -ne 0 ]; then
-    echo "[ERROR] - You must set the certificate filepath."
-    echo ""
-    exit 1
-fi
-
-if [ -z "$CERT_PATH" ]; then
-    echo "[ERROR] - You must set the certificate filepath"
-    echo ""
-    exit 1
-fi
-
-cat "$CERT_PATH" >/dev/null 2>/dev/null
-if [ $? -ne 0 ]; then
-    echo "[ERROR] - The certificate filepath is invalid or the file does not exist."
-    echo ""
-    exit 1
-fi
-
-KEY_PATH=$(whiptail --inputbox "Please insert the key filepath for the certificate for the middleware's DNS entry. Note: Needs to accessible by all nodes \n Ex: /mnt/sharedDisk/middleware/key.pem" --title "Set Key Filepath" 10 60 3>&1 1>&2 2>&3)
-
-if [ $? -ne 0 ]; then
-    echo "[ERROR] - You must set the key filepath."
-    echo ""
-    exit 1
-fi
-
-if [ -z "$KEY_PATH" ]; then
-    echo "[ERROR] - You must set the key filepath"
-    echo ""
-    exit 1
-fi
-
-cat "$KEY_PATH" >/dev/null 2>/dev/null
-if [ $? -ne 0 ]; then
-    echo "[ERROR] - The key filepath is invalid or the file does not exist."
-    echo ""
-    exit 1
-fi
-
-PUSHOVER_USER=$(whiptail --inputbox "(Optional) Please enter the Pushover username:" 10 60 --title "Set Proxmox Username" 3>&1 1>&2 2>&3)
-
-if [ $? -ne 0 ]; then
-    echo "[ERROR] - You must set the Pushover username."
-    echo ""
-    exit 1
-fi
-
-if [[ $PUSHOVER_USER =~ ^[a-zA-Z0-9]{1,30}$ ]]; then
-    PUSHOVER_TOKEN=$(whiptail --inputbox "Please enter the Pushover token:" 10 60 --title "Set Proxmox Token" 3>&1 1>&2 2>&3)
-    if [ $? -ne 0 ]; then
-        echo "[ERROR] - You must set the Pushover token."
-        echo ""
-        exit 1
-    fi
-    if [ -z "$PUSHOVER_TOKEN" ]; then
-        echo "[ERROR] - You must set the Proxmox token."
-        echo ""
-        exit 1
-    fi
-
-    echo "[database]
-uri=\""${DB%/}/db.sqlite"\"
-
-[proxmox]
-ip=\"127.0.0.1\"
-port=\"8006\"
-user=\"$USER\"
-password=\"$PASSWORD\"
-
-[keepalived]
-ip=\"$IP\"
-
-[pushover]
-token=\"$PUSHOVER_TOKEN\"
-user=\"$PUSHOVER_USER\"
-[cert]
-cert=\"$CERT_PATH\"
-key=\"$KEY_PATH\"" >/etc/proxmoxng/middleware/config.toml
-
-    if [ $? -ne 0 ]; then
-        echo "[ERROR] - Failed to create /etc/proxmoxng/middleware/config.toml file, make sure you have root privileges."
-        echo ""
-        exit 1
-    fi
-
-fi
-
-if [[ ! $PUSHOVER_USER =~ ^[a-zA-Z0-9]{1,30}$ ]]; then
-    echo "[database]
-uri=\""${DB%/}/db.sqlite"\"
-
-[proxmox]
-ip=\"127.0.0.1\"
-port=\"8006\"
-user=\"$USER\"
-password=\"$PASSWORD\"
-
-[keepalived]
-ip=\"$IP\"
-
-[cert]
-cert=\"$CERT_PATH\"
-key=\"$KEY_PATH\"" >/etc/proxmoxng/middleware/config.toml
-    if [ $? -ne 0 ]; then
-        echo "[ERROR] - Failed to create /etc/proxmoxng/middleware/config.toml file, make sure you have root privileges."
-        echo ""
-        exit 1
-    fi
-fi
 
 echo ""
 echo "[INSTALL - STEP 2] - ProxmoxNG - Creating Service Daemon ..."
