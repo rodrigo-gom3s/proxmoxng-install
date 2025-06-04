@@ -16,11 +16,6 @@ function pre_init {
     echo "[PRE_SETUP - Packages - STEP 2] - ProxmoxNG - Updating repositories ..."
     echo ""
     apt update -y 2>/dev/null
-    if [ $? -ne 0 ]; then
-        echo "[ERROR] - Failed to update repositories, make sure you have root privileges and access to internet."
-        echo ""
-        exit 1
-    fi
 
     echo "[PRE_SETUP - Packages - STEP 3] - ProxmoxNG - Installing ProxmoxNG dependencies ..."
     echo ""
