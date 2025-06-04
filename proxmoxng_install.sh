@@ -110,20 +110,17 @@ function installing_middleware {
 
 #https://gist.github.com/kwmiebach/e42dc4a43d5a2a0f2c3fdc41620747ab
 get_toml_value() {
-
     local file=$1
     local section=$2
     local key=$3
 
-    get_section() {
-        local file=$1
-        local section=$2
-
-        
-        sed -n "/^\[$section\]/,/^\[/p" "$file" | sed '$d'
-    }
-
-    get_section "$file" "$section" | grep "^$key" | cut -d "=" -f2- | tr -d ' "'
+    # Extract lines between [section] and the next [ or end of file
+    sed -n "/^\[$section\]/,/^\[/p" "$file" | \
+    sed '1d;/^\[.*\]/d' | \
+    grep -E "^$key[[:space:]]*=" | \
+    head -n 1 | \
+    cut -d '=' -f2- | \
+    sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' -e 's/^"//' -e 's/"$//'
 }
 
 echo ""
@@ -442,7 +439,7 @@ cert=\"<cert_path>\"
 # Ex: /mnt/sharedDisk/middleware/key.pem
 key=\"<key_path>\" 
 # Ex: domain.tld
-fqdn=\"<fqdn>\" ">/etc/proxmoxng/middleware/example.auto_config.toml
+fqdn=\"<fqdn>\"">/etc/proxmoxng/middleware/example.auto_config.toml
 
     filepath=$(whiptail --inputbox "Please enter the path to the ProxmoxNG auto-configuration file. \n Ex: /etc/proxmoxng/middleware/auto_config.toml \n Example file located in: \n /etc/proxmoxng/middleware/example.auto_config.toml" 15 60 --title "Set ProxmoxNG Configuration File Path" 3>&1 1>&2 2>&3)
     if [ $? -ne 0 ]; then
@@ -510,6 +507,7 @@ fqdn=\"<fqdn>\" ">/etc/proxmoxng/middleware/example.auto_config.toml
     fi
 
     fqdn=$(get_toml_value "$filepath" "cert" "fqdn")
+    echo "$fqdn"
     if [[ -z "$fqdn" ]]; then
         echo "[ERROR] - The FQDN in the configuration file is invalid."
         echo ""
