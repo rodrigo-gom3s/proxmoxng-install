@@ -161,7 +161,7 @@ case "$OPTION" in
     ;;
 esac
 
-IP=$(whiptail --inputbox "Please enter the middleware IP address:" 10 60 --title "Set Middleware IP Address. The FQDN needs to resolve this ip address. \n Ex: 192.168.100.100" 3>&1 1>&2 2>&3)
+IP=$(whiptail --inputbox "Please enter the middleware IP address. The FQDN needs to resolve this ip address. \n Ex: 192.168.100.100" 10 60 --title "Set Middleware IP Address." 3>&1 1>&2 2>&3)
 
 if [ $? -ne 0 ]; then
     echo "[ERROR] - You must insert a virtual IP to your Proxmox cluster."
@@ -175,9 +175,11 @@ if [[ ! $IP =~ ^((25[0-5]|2[0-4][0-9]|1?[0-9]{1,2})\.){3}(25[0-5]|2[0-4][0-9]|1?
     exit 1
 fi
 
+echo ""
+echo "Middleware IP Address: $IP"
+echo ""
 
-
-PRIORITY=$(whiptail --inputbox "Please enter the keepalived priority:" 10 60 --title "Set Keepalived priority for this node. Note: Each node needs to have a different priority. Higher number, higher priority. \n Ex: 100" 3>&1 1>&2 2>&3)
+PRIORITY=$(whiptail --inputbox "Please enter the keepalived priority value. Note: Each node needs to have a different priority. Higher number, higher priority. \n Ex: 100" 10 60 --title "Set Keepalived priority for this node." 3>&1 1>&2 2>&3)
 
 if [ $? -ne 0 ]; then
     echo "[ERROR] - You must set a keepalived node priority for this node."
@@ -191,6 +193,13 @@ if [[ ! $PRIORITY =~ ^[0-9]{1,3}$ ]]; then
     exit 1
 fi
 
+echo ""
+echo "Keepalived priority value: $PRIORITY"
+echo ""
+
+echo ""
+echo "Writing keepalived configuration file ..."
+echo ""
 echo "vrrp_instance VI_1
 	interface vmbr0
 	virtual_router_id 101
@@ -207,11 +216,7 @@ echo "vrrp_instance VI_1
 	}
 }" >/etc/keepalived/keepalived.conf
 
-echo ""
-echo "[SETUP - STEP 4] - ProxmoxNG - Setting up ProxmoxNG middleware ..."
-echo ""
-
-DB=$(whiptail --inputbox "Please enter the ProxmoxNG database location:" 10 60 --title "Set ProxmoxNG Database Location" 3>&1 1>&2 2>&3)
+DB=$(whiptail --inputbox "Please enter the ProxmoxNG database location. This location needs to be accessible by all nodes. \n Ex: /mnt/sharedDisk/middleware/" 10 60 --title "Set ProxmoxNG Database Location" 3>&1 1>&2 2>&3)
 
 if [ $? -ne 0 ]; then
     echo "[ERROR] - You must set a location for the ProxmoxNG database."
@@ -232,6 +237,10 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
+echo ""
+echo "ProxmoxNG Database Location: $DB"
+echo ""
+
 USER=$(whiptail --inputbox "Please enter the Proxmox username:" --title "Set Proxmox Username" 10 60 root@pam 3>&1 1>&2 2>&3)
 
 if [ $? -ne 0 ]; then
@@ -245,6 +254,10 @@ if [ -z "$USER" ]; then
     echo ""
     exit 1
 fi
+
+echo ""
+echo "Proxmox Username: $USER"
+echo ""
 
 while [ $PASSWORD != $CONFIRM_PASSWORD ]; do
     PASSWORD=$(whiptail --passwordbox "Please enter the Proxmox user password:" 10 60 --title "Set Proxmox User Password" 3>&1 1>&2 2>&3)
@@ -275,10 +288,7 @@ while [ $PASSWORD != $CONFIRM_PASSWORD ]; do
     fi
 done
 
-echo "PASSWORD=$PASSWORD | CONFIRM_PASSWORD=$CONFIRM_PASSWORD"
-echo ""
-
-DNS_ENTRY=$(whiptail --inputbox "Please insert a FQDN for the middleware (it has to be an authorized one):" --title "Set Middleware FQDN" 10 60 3>&1 1>&2 2>&3)
+DNS_ENTRY=$(whiptail --inputbox "Please insert a FQDN for the middleware (it has to be an authorized one and with valid certificates). \n Ex: domain.tld" --title "Set Middleware FQDN" 10 60 3>&1 1>&2 2>&3)
 
 if [ $? -ne 0 ]; then
     echo "[ERROR] - You must set a valid FQDN."
@@ -292,7 +302,11 @@ if [[ -z "$DNS_ENTRY" || ! "$DNS_ENTRY" =~ ^([a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-z
     exit 1
 fi
 
-CERT_PATH=$(whiptail --inputbox "Please insert the certificate filepath for the middleware's DNS entry:" --title "Set Certificate Filepath" 10 60 3>&1 1>&2 2>&3)
+echo ""
+echo "Middleware FQDN: $DNS_ENTRY"
+echo ""
+
+CERT_PATH=$(whiptail --inputbox "Please insert the certificate filepath for the middleware's DNS entry. Note: Needs to accessible by all nodes \n Ex: /mnt/sharedDisk/middleware/cert.pem" --title "Set Certificate Filepath" 10 60 3>&1 1>&2 2>&3)
 
 if [ $? -ne 0 ]; then
     echo "[ERROR] - You must set the certificate filepath."
@@ -313,7 +327,7 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-KEY_PATH=$(whiptail --inputbox "Please insert the key filepath for the certificate:" --title "Set Key Filepath" 10 60 3>&1 1>&2 2>&3)
+KEY_PATH=$(whiptail --inputbox "Please insert the key filepath for the certificate for the middleware's DSN entry:" --title "Set Key Filepath" 10 60 3>&1 1>&2 2>&3)
 
 if [ $? -ne 0 ]; then
     echo "[ERROR] - You must set the key filepath."
@@ -334,7 +348,7 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-PUSHOVER_USER=$(whiptail --inputbox "Please enter the Pushover username:" 10 60 --title "Set Proxmox Username" 3>&1 1>&2 2>&3)
+PUSHOVER_USER=$(whiptail --inputbox "(Optional) Please enter the Pushover username:" 10 60 --title "Set Proxmox Username" 3>&1 1>&2 2>&3)
 
 if [ $? -ne 0 ]; then
     echo "[ERROR] - You must set the Pushover username."
@@ -405,22 +419,6 @@ key=\"$KEY_PATH\"" >/etc/proxmoxng/middleware/config.toml
     fi
 fi
 
-echo "[INSTALL - STEP 1] - ProxmoxNG - Installing ProxmoxNG middleware ..."
-echo ""
-source /usr/share/proxmoxng/.venv/bin/activate >/dev/null 2>/dev/null
-if [ $? -ne 0 ]; then
-    echo "[ERROR] - Failed to activate ProxmoxNG's python virtual enviroment, make sure you have root privileges."
-    echo ""
-    exit 1
-fi
-
-pip install -i https://test.pypi.org/simple/ --no-deps proxmoxng 2>/dev/null
-if [ $? -ne 0 ]; then
-    echo "[ERROR] - Failed to install ProxmoxNG middleware, make sure you have root privileges and access to internet."
-    echo ""
-    exit 1
-fi
-
 echo ""
 echo "[INSTALL - STEP 2] - ProxmoxNG - Creating Service Daemon ..."
 echo ""
@@ -441,8 +439,9 @@ WantedBy=multi-user.target
 
 systemctl enable --now proxmoxng.service
 
+
 echo ""
-echo "[INSTALL - STEP 2] - ProxmoxNG - Downloading ProxmoxNG ..."
+echo "[INSTALL - STEP 2] - ProxmoxNG - Downloading ProxmoxNG Interface..."
 echo ""
 mkdir /etc/proxmoxng/interface >/dev/null 2>/dev/null
 git clone https://github.com/rodrigo-gom3s/pve-manager.git /etc/proxmoxng/interface/pve-manager >/dev/null 2>/dev/null
