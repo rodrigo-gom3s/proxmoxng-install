@@ -418,24 +418,31 @@ key=\"$KEY_PATH\"" >/etc/proxmoxng/middleware/config.toml
     echo "#Example of automatic configuration file
 #Change the name of the file after editing
 [database]
-uri=\"<db_path>\" # Ex: /mnt/sharedDisk/middleware/
+# Ex: /mnt/sharedDisk/middleware/
+uri=\"<db_path>\" 
 
 [proxmox]
-user=\"<user>\" # Ex: root@pam
+# Ex: root@pam
+user=\"<user>\"
 password=\"<password>\"
 
 [keepalived]
-ip=\"<ip_address>\" # Ex: 192.168.100.100
-priority=\"<node_priority>\" # Ex: 100
+# Ex: 192.168.100.100
+ip=\"<ip_address>\" 
+# Ex: 100
+priority=\"<node_priority>\" 
 
 #[pushover] 
 #token=\"<application_token>\"
 #user=\"<user_token>\"
     
 [cert]
-cert=\"<cert_path>\" # Ex: /mnt/sharedDisk/middleware/cert.pem
-key=\"<key_path>\" # Ex: /mnt/sharedDisk/middleware/key.pem
-fqdn=\"<fqdn>\" # Ex: domain.tld" >/etc/proxmoxng/middleware/example.auto_config.toml
+# Ex: /mnt/sharedDisk/middleware/cert.pem
+cert=\"<cert_path>\" 
+# Ex: /mnt/sharedDisk/middleware/key.pem
+key=\"<key_path>\" 
+# Ex: domain.tld
+fqdn=\"<fqdn>\" ">/etc/proxmoxng/middleware/example.auto_config.toml
 
     filepath=$(whiptail --inputbox "Please enter the path to the ProxmoxNG auto-configuration file. \n Ex: /etc/proxmoxng/middleware/auto_config.toml \n Example file located in: \n /etc/proxmoxng/middleware/example.auto_config.toml" 15 60 --title "Set ProxmoxNG Configuration File Path" 3>&1 1>&2 2>&3)
     if [ $? -ne 0 ]; then
