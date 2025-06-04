@@ -448,6 +448,7 @@ fqdn=\"<fqdn>\" # Ex: domain.tld" >/etc/proxmoxng/middleware/example.auto_config
     fi
 
     db=$(get_toml_value "$filepath" "database" "uri")
+    echo "[INFO] - ProxmoxNG - Database location: $db"
     ls "$DB" >/dev/null 2>/dev/null
     if [ $? -ne 0 ]; then
         echo "[ERROR] - The database location is invalid or the directory does not exist."
