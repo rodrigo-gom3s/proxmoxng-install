@@ -185,20 +185,20 @@ case "$OPTION" in
     echo "Writing keepalived configuration file ..."
     echo ""
     echo "vrrp_instance VI_1
-	interface vmbr0
-	virtual_router_id 101
-	state BACKUP
-	nopreempt
-	priority $PRIORITY
-	advert_int 1
-	authentication {
-		auth_type PASS
-		auth_pass 12345678
-	}
-	virtual_ipaddress {
-		$IP
-	}
-}" >/etc/keepalived/keepalived.conf
+    interface vmbr0
+    virtual_router_id 101
+    state BACKUP
+    nopreempt
+    priority $PRIORITY
+    advert_int 1
+    authentication {
+        auth_type PASS
+        auth_pass 12345678
+    }
+    virtual_ipaddress {
+        $IP
+    }
+    }" >/etc/keepalived/keepalived.conf
 
     if [ $? -ne 0 ]; then
         echo "[ERROR] - Failed to write keepalived configuration file, make sure you have root privileges."
@@ -412,34 +412,36 @@ key=\"$KEY_PATH\"" >/etc/proxmoxng/middleware/config.toml
 "2)")
     echo "[INSTALLING] - ProxmoxNG - Starting full installation in automatic mode ..."
 
-    echo "#Example of automatic configuration file
-#Change the name of the file after editing
-[database]
-# Ex: /mnt/sharedDisk/middleware/
-uri=\"<db_path>\" 
+    cat <<EOF | sed 's/^ *//' > /etc/proxmoxng/middleware/example.auto_config.toml
+        #Example of automatic configuration file
+        #Change the name of the file after editing
+        [database]
+        # Ex: /mnt/sharedDisk/middleware/
+        uri="<db_path>"
 
-[proxmox]
-# Ex: root@pam
-user=\"<user>\"
-password=\"<password>\"
+        [proxmox]
+        # Ex: root@pam
+        user="<user>"
+        password="<password>"
 
-[keepalived]
-# Ex: 192.168.100.100
-ip=\"<ip_address>\" 
-# Ex: 100
-priority=\"<node_priority>\" 
+        [keepalived]
+        # Ex: 192.168.100.100
+        ip="<ip_address>"
+        # Ex: 100
+        priority="<node_priority>"
 
-#[pushover] 
-#token=\"<application_token>\"
-#user=\"<user_token>\"
-    
-[cert]
-# Ex: /mnt/sharedDisk/middleware/cert.pem
-cert=\"<cert_path>\" 
-# Ex: /mnt/sharedDisk/middleware/key.pem
-key=\"<key_path>\" 
-# Ex: domain.tld
-fqdn=\"<fqdn>\"">/etc/proxmoxng/middleware/example.auto_config.toml
+        #[pushover]
+        #token="<application_token>"
+        #user="<user_token>"
+
+        [cert]
+        # Ex: /mnt/sharedDisk/middleware/cert.pem
+        cert="<cert_path>"
+        # Ex: /mnt/sharedDisk/middleware/key.pem
+        key="<key_path>"
+        # Ex: domain.tld
+        fqdn="<fqdn>"
+EOF
 
     filepath=$(whiptail --inputbox "Please enter the path to the ProxmoxNG auto-configuration file. \n Ex: /etc/proxmoxng/middleware/auto_config.toml \n Example file located in: \n /etc/proxmoxng/middleware/example.auto_config.toml" 15 60  /etc/proxmoxng/middleware/auto_config.toml --title "Set ProxmoxNG Configuration File Path" 3>&1 1>&2 2>&3)
     if [ $? -ne 0 ]; then
@@ -531,22 +533,23 @@ fqdn=\"<fqdn>\"">/etc/proxmoxng/middleware/example.auto_config.toml
     echo ""
     echo "Writing keepalived configuration file ..."
     echo ""
-    echo "vrrp_instance VI_1
-interface vmbr0
-virtual_router_id 101
-state BACKUP
-nopreempt
-priority $priority
-advert_int 1
-authentication {
-	auth_type PASS
-	auth_pass 12345678
-}
-virtual_ipaddress {
-	$ip
-}
-}" >/etc/keepalived/keepalived.conf
-
+    cat <<EOF | sed 's/^[\t ]//' > /etc/keepalived/keepalived.conf
+	vrrp_instance VI_1 {
+		interface vmbr0
+		virtual_router_id 101
+		state BACKUP
+		nopreempt
+		priority $priority
+		advert_int 1
+		authentication {
+			auth_type PASS
+			auth_pass 12345678
+		}
+		virtual_ipaddress {
+			$ip
+		}
+	}
+EOF
     if [[ $pushover_user =~ ^[a-zA-Z0-9]{1,30}$ ]]; then
         echo "[database]
 uri=\""${db%/}/db.sqlite"\"
@@ -588,6 +591,16 @@ key=\"$key\"" >/etc/proxmoxng/middleware/config.toml
 
     DNS_ENTRY=$fqdn
     ;;
+
+"3)")
+	echo "[INSTALLING] - ProxmoxNG - Starting full installation in manual mode ..."
+	if whiptail --title "ProxmoxNG Installer" --yesno "Are you sure you want to continue? This is an advanced feature. You are expected to manually configure all configuration files." 8 78 3>&1 1>&2 2>&3; then
+		echo "User selected Yes, exit status was $?."
+	else
+		echo "User selected No, exit status was $?."
+	fi
+	
+	;;
 "4)")
     echo "[UPDATING] - ProxmoxNG - Starting update of the Middleware software ..."
     echo ""
