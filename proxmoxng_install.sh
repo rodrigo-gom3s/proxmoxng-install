@@ -108,6 +108,26 @@ function installing_middleware {
     fi
 }
 
+function create_service {
+    echo ""
+    echo "[SETUP - Service - STEP 1] - ProxmoxNG - Creating Service Daemon ..."
+    echo ""
+    <<EOF | sed 's/^ *//' > /etc/systemd/system/proxmoxng.service
+    [Unit]
+    Description=ProxmoxNG Middlware Daemon
+    After=network.target
+
+    [Service]
+    User=root
+    Group=root
+    ExecStart=/usr/share/proxmoxng/.venv/bin/proxmoxng
+    Restart=always
+
+    [Install]
+    WantedBy=multi-user.target
+EOF
+
+
 #https://gist.github.com/kwmiebach/e42dc4a43d5a2a0f2c3fdc41620747ab
 get_toml_value() {
     local file=$1
@@ -115,12 +135,12 @@ get_toml_value() {
     local key=$3
 
     # Extract lines between [section] and the next [ or end of file
-    sed -n "/^\[$section\]/,/^\[/p" "$file" | \
-    sed '1d;/^\[.*\]/d' | \
-    grep -E "^$key[[:space:]]*=" | \
-    head -n 1 | \
-    cut -d '=' -f2- | \
-    sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' -e 's/^"//' -e 's/"$//'
+    sed -n "/^\[$section\]/,/^\[/p" "$file" |
+        sed '1d;/^\[.*\]/d' |
+        grep -E "^$key[[:space:]]*=" |
+        head -n 1 |
+        cut -d '=' -f2- |
+        sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' -e 's/^"//' -e 's/"$//'
 }
 
 echo ""
@@ -129,7 +149,7 @@ echo ""
 OPTION=$(whiptail --title "ProxmoxNG Installer" --menu "Choose an option" 25 78 16 \
     "1)" "Full installation - Normal Mode (Recommended)" \
     "2)" "Full installation - Automatic Mode" \
-    "3)" "Full installation - Manual Mode" \
+    "3)" "Full installation - Manual Mode (Advanced)" \
     "4)" "Update the Middleware software" \
     3>&1 1>&2 2>&3)
 
@@ -408,11 +428,14 @@ key=\"$KEY_PATH\"" >/etc/proxmoxng/middleware/config.toml
             exit 1
         fi
     fi
+
+    create_service
+    systemctl enable --now proxmoxng.service >/dev/null 2>/dev/null
     ;;
 "2)")
     echo "[INSTALLING] - ProxmoxNG - Starting full installation in automatic mode ..."
 
-    cat <<EOF | sed 's/^ *//' > /etc/proxmoxng/middleware/example.auto_config.toml
+    cat <<EOF | sed 's/^ *//' >/etc/proxmoxng/middleware/example.auto_config.toml
         #Example of automatic configuration file
         #Change the name of the file after editing
         [database]
@@ -443,7 +466,7 @@ key=\"$KEY_PATH\"" >/etc/proxmoxng/middleware/config.toml
         fqdn="<fqdn>"
 EOF
 
-    filepath=$(whiptail --inputbox "Please enter the path to the ProxmoxNG auto-configuration file. \n Ex: /etc/proxmoxng/middleware/auto_config.toml \n Example file located in: \n /etc/proxmoxng/middleware/example.auto_config.toml" 15 60  /etc/proxmoxng/middleware/auto_config.toml --title "Set ProxmoxNG Configuration File Path" 3>&1 1>&2 2>&3)
+    filepath=$(whiptail --inputbox "Please enter the path to the ProxmoxNG auto-configuration file. \n Ex: /etc/proxmoxng/middleware/auto_config.toml \n Example file located in: \n /etc/proxmoxng/middleware/example.auto_config.toml" 15 60 /etc/proxmoxng/middleware/auto_config.toml --title "Set ProxmoxNG Configuration File Path" 3>&1 1>&2 2>&3)
     if [ $? -ne 0 ]; then
         cleanup
     fi
@@ -472,6 +495,7 @@ EOF
     fi
 
     priority=$(get_toml_value "$filepath" "keepalived" "priority")
+    echo "[INFO] - ProxmoxNG - Priority: $priority"
     if [[ ! $priority =~ ^[0-9]{1,3}$ ]]; then
         echo "[ERROR] - The priority value in the configuration file is invalid."
         echo ""
@@ -479,6 +503,7 @@ EOF
     fi
 
     user=$(get_toml_value "$filepath" "proxmox" "user")
+    echo "[INFO] - ProxmoxNG - User: $user"
     if [ -z "$user" ]; then
         echo "[ERROR] - The Proxmox username in the configuration file is invalid."
         echo ""
@@ -486,6 +511,7 @@ EOF
     fi
 
     password=$(get_toml_value "$filepath" "proxmox" "password")
+    echo "[INFO] - ProxmoxNG - Password: *********"
     if [ -z "$password" ]; then
         echo "[ERROR] - The Proxmox password in the configuration file is invalid."
         echo ""
@@ -493,6 +519,7 @@ EOF
     fi
 
     cert=$(get_toml_value "$filepath" "cert" "cert")
+    echo "[INFO] - ProxmoxNG - Certificate: $cert"
     ls "$cert" >/dev/null 2>/dev/null
     if [ $? -ne 0 ]; then
         echo "[ERROR] - The certificate filepath in the configuration file is invalid or the file does not exist."
@@ -501,6 +528,7 @@ EOF
     fi
 
     key=$(get_toml_value "$filepath" "cert" "key")
+    echo "[INFO] - ProxmoxNG - Key: $key"
     ls "$key" >/dev/null 2>/dev/null
     if [ $? -ne 0 ]; then
         echo "[ERROR] - The key filepath in the configuration file is invalid or the file does not exist."
@@ -509,6 +537,7 @@ EOF
     fi
 
     fqdn=$(get_toml_value "$filepath" "cert" "fqdn")
+    echo "[INFO] - ProxmoxNG - FQDN: $fqdn"
     echo "$fqdn"
     if [[ -z "$fqdn" ]]; then
         echo "[ERROR] - The FQDN in the configuration file is invalid."
@@ -517,7 +546,9 @@ EOF
     fi
 
     pushover_user=$(get_toml_value "$filepath" "pushover" "user")
+    echo "[INFO] - ProxmoxNG - Pushover User: $pushover_user"
     pushover_token=$(get_toml_value "$filepath" "pushover" "token")
+    echo "[INFO] - ProxmoxNG - Pushover Token: $pushover_token"
     if [[ -n "$pushover_user" && -z "$pushover_token" ]]; then
         echo "[ERROR] - The Pushover token in the configuration file is invalid."
         echo ""
@@ -533,7 +564,7 @@ EOF
     echo ""
     echo "Writing keepalived configuration file ..."
     echo ""
-    cat <<EOF | sed 's/^[\t ]//' > /etc/keepalived/keepalived.conf
+    cat <<EOF | sed 's/^[\t ]//' >/etc/keepalived/keepalived.conf
 	vrrp_instance VI_1 {
 		interface vmbr0
 		virtual_router_id 101
@@ -551,56 +582,95 @@ EOF
 	}
 EOF
     if [[ $pushover_user =~ ^[a-zA-Z0-9]{1,30}$ ]]; then
-        echo "[database]
-uri=\""${db%/}/db.sqlite"\"
+        cat <<EOF | sed 's/^ *//' >/etc/proxmoxng/middleware/config.toml
+            [database]
+            uri=\""${db%/}/db.sqlite"\"
 
-[proxmox]
-ip=\"127.0.0.1\"
-port=\"8006\"
-user=\"$user\"
-password=\"$password\"
+            [proxmox]
+            ip=\"127.0.0.1\"
+            port=\"8006\"
+            user=\"$user\"
+            password=\"$password\"
 
-[keepalived]
-ip=\"$ip\"
+            [keepalived]
+            ip=\"$ip\"
 
-[pushover]
-token=\"$pushover_token\"
-user=\"$pushover_user\"
-    
-[cert]
-cert=\"$cert\"
-key=\"$key\"" >/etc/proxmoxng/middleware/config.toml
+            [pushover]
+            token=\"$pushover_token\"
+            user=\"$pushover_user\"
+                
+            [cert]
+            cert=\"$cert\"
+            key=\"$key\"
+EOF
 
     else
-        echo "[database]
-uri=\""${db%/}/db.sqlite"\"
+        cat <<EOF | sed 's/^ *//' >/etc/proxmoxng/middleware/config.toml
+            [database]
+            uri=\""${db%/}/db.sqlite"\"
 
-[proxmox]
-ip=\"127.0.0.1\"
-port=\"8006\"
-user=\"$user\"
-password=\"$password\"
+            [proxmox]
+            ip=\"127.0.0.1\"
+            port=\"8006\"
+            user=\"$user\"
+            password=\"$password\"
 
-[keepalived]
-ip=\"$ip\"
-
-[cert]
-cert=\"$cert\"
-key=\"$key\"" >/etc/proxmoxng/middleware/config.toml
+            [keepalived]
+            ip=\"$ip\"
+                
+            [cert]
+            cert=\"$cert\"
+            key=\"$key\"
+EOF
     fi
 
     DNS_ENTRY=$fqdn
+
+    create_service
+    systemctl enable --now proxmoxng.service >/dev/null 2>/dev/null
     ;;
 
 "3)")
-	echo "[INSTALLING] - ProxmoxNG - Starting full installation in manual mode ..."
-	if whiptail --title "ProxmoxNG Installer" --yesno "Are you sure you want to continue? This is an advanced feature. You are expected to manually configure all configuration files." 8 78 3>&1 1>&2 2>&3; then
-		echo "User selected Yes, exit status was $?."
-	else
-		echo "User selected No, exit status was $?."
-	fi
-	
-	;;
+    echo "[INSTALLING] - ProxmoxNG - Starting full installation in manual mode ..."
+    if whiptail --title "ProxmoxNG Installer" --yesno "Are you sure you want to continue? This is an advanced feature. You are expected to manually configure all configuration files." 8 78 3>&1 1>&2 2>&3; then
+        
+        DNS_ENTRY=$(whiptail --inputbox "Please insert a FQDN for the middleware (it has to be an authorized one and with valid certificates). \n Ex: domain.tld" --title "(Manual) Set Middleware FQDN" 10 60 3>&1 1>&2 2>&3)
+        
+        if [ $? -ne 0 ]; then
+            echo "[ERROR] - You must set a valid FQDN."
+            echo ""
+            exit 1
+        fi
+
+        if [[ -z "$DNS_ENTRY" || ! "$DNS_ENTRY" =~ ^([a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$ ]]; then
+            echo "[ERROR] - You must set a valid FQDN"
+            echo ""
+            exit 1
+        fi
+
+        create_service
+        
+        echo "[INFO] - ProxmoxNG - User selected Yes, proceeding with manual installation."
+        echo ""
+        echo "Please make sure you have the following files ready:"
+        echo "- /etc/proxmoxng/middleware/config.toml"
+        echo "- /etc/keepalived/keepalived.conf"
+        echo "- The certificate and key files for the middleware's DNS entry."
+        echo ""
+        echo "You can find an example configuration file at /etc/proxmoxng/middleware/example.config.toml"
+        echo ""
+        echo "You can find an example keepalived configuration file at /etc/keepalived/example.keepalived.conf"
+        echo ""
+        echo "You can start the service with the command: systemctl start proxmoxng.service"
+        echo ""
+        echo "You can enable the service to start on boot with the command: systemctl enable proxmoxng.service"
+        echo ""
+        echo "You can check the service status with the command: systemctl status proxmoxng.service"
+    else
+        cleanup
+    fi
+
+    ;;
 "4)")
     echo "[UPDATING] - ProxmoxNG - Starting update of the Middleware software ..."
     echo ""
@@ -632,25 +702,7 @@ key=\"$key\"" >/etc/proxmoxng/middleware/config.toml
     ;;
 esac
 
-echo ""
-echo "[INSTALL - STEP 2] - ProxmoxNG - Creating Service Daemon ..."
-echo ""
-echo "
-[Unit]
-Description=ProxmoxNG Middlware Daemon
-After=network.target
 
-[Service]
-User=root
-Group=root
-ExecStart=/usr/share/proxmoxng/.venv/bin/proxmoxng
-Restart=always
-
-[Install]
-WantedBy=multi-user.target
-" >/etc/systemd/system/proxmoxng.service
-
-systemctl enable --now proxmoxng.service
 
 echo ""
 echo "[INSTALL - STEP 2] - ProxmoxNG - Downloading ProxmoxNG Interface..."
