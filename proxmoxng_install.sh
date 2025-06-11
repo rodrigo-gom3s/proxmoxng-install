@@ -112,7 +112,7 @@ function create_service {
     echo ""
     echo "[SETUP - Service - STEP 1] - ProxmoxNG - Creating Service Daemon ..."
     echo ""
-    <<EOF | sed 's/^ *//' > /etc/systemd/system/proxmoxng.service
+    cat <<EOF | sed 's/^ *//' > /etc/systemd/system/proxmoxng.service
     [Unit]
     Description=ProxmoxNG Middlware Daemon
     After=network.target
