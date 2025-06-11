@@ -100,7 +100,7 @@ function installing_middleware {
     echo ""
     echo "[SETUP - Middleware - STEP 1.3] - ProxmoxNG - Installing ProxmoxNG..."
     echo ""
-    pip install -i https://test.pypi.org/simple/ --upgrade --no-deps proxmoxng 2>/dev/null
+    pip install proxmoxng 2>/dev/null
     if [ $? -ne 0 ]; then
         echo "[ERROR] - Failed to install ProxmoxNG middleware, make sure you have root privileges and access to internet."
         echo ""
@@ -126,7 +126,7 @@ function create_service {
     [Install]
     WantedBy=multi-user.target
 EOF
-
+}
 
 #https://gist.github.com/kwmiebach/e42dc4a43d5a2a0f2c3fdc41620747ab
 get_toml_value() {
@@ -682,7 +682,7 @@ EOF
         echo ""
         exit 1
     fi
-    pip install -i https://test.pypi.org/simple/ --upgrade --no-deps proxmoxng 2>/dev/null
+    pip install --upgrade proxmoxng 2>/dev/null
     echo ""
     if [ $? -ne 0 ]; then
         echo "[ERROR] - Failed to update ProxmoxNG middleware, make sure you have root privileges and access to internet."
