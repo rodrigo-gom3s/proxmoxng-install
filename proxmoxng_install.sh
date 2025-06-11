@@ -584,43 +584,43 @@ EOF
     if [[ $pushover_user =~ ^[a-zA-Z0-9]{1,30}$ ]]; then
         cat <<EOF | sed 's/^ *//' >/etc/proxmoxng/middleware/config.toml
             [database]
-            uri=\""${db%/}/db.sqlite"\"
+            uri="${db%/}/db.sqlite"
 
             [proxmox]
-            ip=\"127.0.0.1\"
-            port=\"8006\"
-            user=\"$user\"
-            password=\"$password\"
+            ip="127.0.0.1"
+            port="8006"
+            user="$user"
+            password="$password"
 
             [keepalived]
-            ip=\"$ip\"
+            ip="$ip"
 
             [pushover]
-            token=\"$pushover_token\"
-            user=\"$pushover_user\"
+            token="$pushover_token"
+            user="$pushover_user"
                 
             [cert]
-            cert=\"$cert\"
-            key=\"$key\"
+            cert="$cert"
+            key="$key"
 EOF
 
     else
         cat <<EOF | sed 's/^ *//' >/etc/proxmoxng/middleware/config.toml
             [database]
-            uri=\""${db%/}/db.sqlite"\"
+            uri="${db%/}/db.sqlite"
 
             [proxmox]
-            ip=\"127.0.0.1\"
-            port=\"8006\"
-            user=\"$user\"
-            password=\"$password\"
+            ip="127.0.0.1"
+            port="8006"
+            user="$user"
+            password="$password"
 
             [keepalived]
-            ip=\"$ip\"
+            ip="$ip"
                 
             [cert]
-            cert=\"$cert\"
-            key=\"$key\"
+            cert="$cert"
+            key="$key"
 EOF
     fi
 
