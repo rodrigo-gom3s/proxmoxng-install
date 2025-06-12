@@ -115,7 +115,7 @@ function create_service {
     cat <<EOF | sed 's/^ *//' > /etc/systemd/system/proxmoxng.service
     [Unit]
     Description=ProxmoxNG Middlware Daemon
-    After=network.target
+    After=pve-guests.service
 
     [Service]
     User=root
