@@ -112,7 +112,7 @@ function create_service {
     echo ""
     echo "[SETUP - Service - STEP 1] - ProxmoxNG - Creating Service Daemon ..."
     echo ""
-    cat <<EOF | sed 's/^ *//' > /etc/systemd/system/proxmoxng.service
+    cat <<EOF | sed 's/^ *//' >/etc/systemd/system/proxmoxng.service
     [Unit]
     Description=ProxmoxNG Middlware Daemon
     After=pve-guests.service
@@ -633,9 +633,9 @@ EOF
 "3)")
     echo "[INSTALLING] - ProxmoxNG - Starting full installation in manual mode ..."
     if whiptail --title "ProxmoxNG Installer" --yesno "Are you sure you want to continue? This is an advanced feature. You are expected to manually configure all configuration files." 8 78 3>&1 1>&2 2>&3; then
-        
+
         DNS_ENTRY=$(whiptail --inputbox "Please insert a FQDN for the middleware (it has to be an authorized one and with valid certificates). \n Ex: domain.tld" --title "(Manual) Set Middleware FQDN" 10 60 3>&1 1>&2 2>&3)
-        
+
         if [ $? -ne 0 ]; then
             echo "[ERROR] - You must set a valid FQDN."
             echo ""
@@ -649,7 +649,7 @@ EOF
         fi
 
         create_service
-        
+
         echo "[INFO] - ProxmoxNG - User selected Yes, proceeding with manual installation."
         echo ""
         echo "Please make sure you have the following files ready:"
@@ -672,6 +672,20 @@ EOF
 
     ;;
 "4)")
+    DNS_ENTRY=$(whiptail --inputbox "Please insert a FQDN for the middleware (it has to be an authorized one and with valid certificates). \n Ex: domain.tld" --title "(Manual) Set Middleware FQDN" 10 60 3>&1 1>&2 2>&3)
+
+    if [ $? -ne 0 ]; then
+        echo "[ERROR] - You must set a valid FQDN."
+        echo ""
+        exit 1
+    fi
+
+    if [[ -z "$DNS_ENTRY" || ! "$DNS_ENTRY" =~ ^([a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$ ]]; then
+        echo "[ERROR] - You must set a valid FQDN"
+        echo ""
+        exit 1
+    fi
+
     echo "[UPDATING] - ProxmoxNG - Starting update of the Middleware software ..."
     echo ""
     echo "[INSTALL] - ProxmoxNG - Updating ProxmoxNG middleware ..."
@@ -697,12 +711,54 @@ EOF
         echo ""
         exit 1
     fi
+    echo "[SETUP] - ProxmoxNG - Updating ProxmoxNG interface ..."
+    echo ""
+    rm -r /etc/proxmoxng/interface/pve-manager >/dev/null 2>/dev/null
+    if [ $? -ne 0 ]; then
+        echo "[ERROR] - Failed to remove old ProxmoxNG interface, make sure you have root privileges and that you already have the ProxmoxNG installed."
+        echo ""
+        exit 1
+    fi
+    git clone https://github.com/rodrigo-gom3s/pve-manager.git /etc/proxmoxng/interface/pve-manager >/dev/null 2>/dev/null
+    if [ $? -ne 0 ]; then
+        ls /etc/proxmoxng/interface/pve-manager >/dev/null 2>/dev/null
+        if [ $? -ne 0 ]; then
+            echo "[ERROR] - Failed to create /etc/proxmoxng directory, make sure you have root privileges."
+            echo ""
+            exit 1
+        fi
+    fi
+    sed -i "s/domain\.tld/${DNS_ENTRY}/g" /etc/proxmoxng/interface/pve-manager/www/manager6/window/NHACreateJSON.js 2>/dev/null
+    if [ $? -ne 0 ]; then
+        echo "[ERROR] - Failed to update the FQDN in NHACreateJSON.js, make sure you have root privileges."
+        echo ""
+        exit 1
+    fi
+    sed -i "s/domain\.tld/${DNS_ENTRY}/g" /etc/proxmoxng/interface/pve-manager/www/manager6/window/NHAExternalMigration.js 2>/dev/null
+    if [ $? -ne 0 ]; then
+        echo "[ERROR] - Failed to update the FQDN in NHAExternalMigration.js, make sure you have root privileges."
+        echo ""
+        exit 1
+    fi
+    sed -i "s/domain\.tld/${DNS_ENTRY}/g" /etc/proxmoxng/interface/pve-manager/www/manager6/window/NHAFaultTolerance.js 2>/dev/null
+    if [ $? -ne 0 ]; then
+        echo "[ERROR] - Failed to update the FQDN in NHAFaultTolerance.js, make sure you have root privileges."
+        echo ""
+        exit 1
+    fi
+    cd /etc/proxmoxng/interface/pve-manager && make >/dev/null 2>/dev/null
+
+    cd /etc/proxmoxng/interface/pve-manager/www && make install >/dev/null 2>/dev/null
+    if [ $? -ne 0 ]; then
+        echo "[ERROR] - Failed to compile ProxmoxNG WWW, make sure you have root privileges."
+        echo ""
+        exit 1
+    fi
+
     echo "[FINISH] - ProxmoxNG - Update finished successfully."
     exit 0
     ;;
 esac
-
-
 
 echo ""
 echo "[INSTALL - STEP 2] - ProxmoxNG - Downloading ProxmoxNG Interface..."
