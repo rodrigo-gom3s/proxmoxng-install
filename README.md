@@ -31,7 +31,7 @@ curl https://raw.githubusercontent.com/rodrigo-gom3s/proxmoxng-install/refs/head
 ## 📘 Learn More
 
 For a full list of features provided by the plugin, visit the main project page:  
-👉 [ProxmoxNG on GitHub](https://github.com/rodrigo-gom3s/proxmoxng)
+👉 [ProxmoxNG on GitHub](https://github.com/rodrigo-gom3s/pve-manager)
 
 ---
 
