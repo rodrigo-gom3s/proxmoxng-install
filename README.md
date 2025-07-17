@@ -10,8 +10,6 @@ To install the **ProxmoxNG** plugin, simply run the following command on your **
 curl https://raw.githubusercontent.com/rodrigo-gom3s/proxmoxng-install/refs/heads/main/proxmoxng_install.sh | bash
 ```
 
-> ⚠️ **Warning:** Make sure you trust this source before executing any remote scripts via `curl | bash`.
-
 ---
 
 ## 📋 Requirements
